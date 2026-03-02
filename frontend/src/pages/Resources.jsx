@@ -94,13 +94,21 @@ const Resources = () => {
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {resources.map((resource) => (
-            <div key={resource._id} className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div key={resource._id} className="group bg-white/70 backdrop-blur-xl 
+           border border-white/40
+           rounded-3xl shadow-lg 
+           overflow-hidden 
+           transition-all duration-500 
+           hover:shadow-2xl hover:-translate-y-3">
               {resource.thumbnail && (
-                <img
-                  src={resource.thumbnail}
-                  alt={resource.title}
-                  className="w-full h-48 object-cover"
-                />
+                <div className="relative">
+                  <img
+                    src={resource.thumbnail}
+                    alt={resource.title}
+                    className="w-full h-48 object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+                </div>
               )}
               <div className="p-6">
                 <div className="flex items-center mb-2">

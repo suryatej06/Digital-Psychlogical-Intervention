@@ -16,61 +16,73 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen bg-gray-50">
+        {/* Universal Mental Health Gradient */}
+        <div className="min-h-screen bg-gradient-to-br from-rose-100 via-white to-indigo-100">
+          
           <Navbar />
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/resources"
-              element={
-                <ProtectedRoute allowedRoles={['student']}>
-                  <Resources />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/community"
-              element={
-                <ProtectedRoute allowedRoles={['student']}>
-                  <Community />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/chatbot"
-              element={
-                <ProtectedRoute allowedRoles={['student']}>
-                  <Chatbot />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/bookings"
-              element={
-                <ProtectedRoute allowedRoles={['student', 'counselor']}>
-                  <Bookings />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminPanel />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
+
+          <main>
+            <Routes>
+              <Route path="/" element={<Landing />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/resources"
+                element={
+                  <ProtectedRoute allowedRoles={['student']}>
+                    <Resources />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/community"
+                element={
+                  <ProtectedRoute allowedRoles={['student']}>
+                    <Community />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/chatbot"
+                element={
+                  <ProtectedRoute allowedRoles={['student']}>
+                    <Chatbot />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/bookings"
+                element={
+                  <ProtectedRoute allowedRoles={['student', 'counselor']}>
+                    <Bookings />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <AdminPanel />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </main>
+
         </div>
       </Router>
     </AuthProvider>
