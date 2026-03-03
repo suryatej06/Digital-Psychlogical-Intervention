@@ -84,6 +84,15 @@ const Community = () => {
     }
   };
 
+  const handleDeleteComment = async (commentId) => {
+    try {
+      await commentsAPI.delete(commentId);
+      fetchPostDetails(selectedPost.post._id);
+    } catch (error) {
+      console.error("Failed to delete comment");
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-8">
@@ -101,7 +110,7 @@ const Community = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
         </div>
       ) : (
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="max-w-2xl mx-auto space-y-6">
           <div className="md:col-span-2">
             {posts.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
@@ -112,98 +121,106 @@ const Community = () => {
                 {posts.map((post) => (
                   <div
                     key={post._id}
-                    className="bg-white p-6 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition"
-                    onClick={() => fetchPostDetails(post._id)}
+                    className="bg-white/80 backdrop-blur-md rounded-2xl p-5 shadow-sm hover:shadow-md transition"
                   >
-                    <h3 className="text-xl font-semibold mb-2">{post.title}</h3>
-                    <p className="text-gray-600 mb-4 line-clamp-3">{post.content}</p>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <span className="text-sm text-gray-500">
-                          {post.isAnonymous ? post.authorAlias : post.author?.name || 'Anonymous'}
+                    {/* Post Header */}
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <span className="font-semibold text-gray-900">
+                          {post.isAnonymous
+                            ? post.authorAlias
+                            : post.author?.name || "Anonymous"}
                         </span>
-                        <span className="text-sm text-gray-400">
+                        <span className="text-sm text-gray-400 ml-2">
                           {new Date(post.createdAt).toLocaleDateString()}
                         </span>
                       </div>
-                      <div className="flex items-center space-x-4">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleLike(post._id);
-                          }}
-                          className="text-gray-500 hover:text-primary-600"
-                        >
-                          ❤️ {post.likes?.length || 0}
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleReport(post._id);
-                          }}
-                          className="text-gray-500 hover:text-red-600"
-                        >
-                          Report
-                        </button>
-                      </div>
                     </div>
+
+                    {/* Post Content */}
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                      {post.title}
+                    </h3>
+
+                    <p className="text-gray-700 mb-4">{post.content}</p>
+
+                    {/* Actions */}
+                    <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
+                      <button
+                        onClick={() => handleLike(post._id)}
+                        className="hover:text-primary-600 transition"
+                      >
+                        ❤️ {post.likes?.length || 0}
+                      </button>
+
+                      <button
+                        onClick={() => fetchPostDetails(post._id)}
+                        className="hover:text-gray-700 transition"
+                      >
+                        💬 Replies
+                      </button>
+
+                      <button
+                        onClick={() => handleReport(post._id)}
+                        className="hover:text-red-600 transition"
+                      >
+                        🚩 Report
+                      </button>
+                    </div>
+
+                    {/* Inline Replies */}
+                    {selectedPost?.post._id === post._id && (
+                      <div className="mt-4 border-t pt-4 space-y-3">
+                        {/* Reply Form */}
+                        <form onSubmit={handleAddComment} className="mb-3">
+                          <textarea
+                            className="w-full px-3 py-2 border border-gray-200 rounded-xl"
+                            placeholder="Write a reply..."
+                            value={newComment.content}
+                            onChange={(e) =>
+                              setNewComment({ ...newComment, content: e.target.value })
+                            }
+                            required
+                          />
+                          <button
+                            type="submit"
+                            className="mt-2 px-4 py-1.5 bg-primary-600 text-white rounded-xl text-sm"
+                          >
+                            Reply
+                          </button>
+                        </form>
+
+                        {/* Comments */}
+                        {selectedPost.comments.map((comment) => (
+                          <div
+                            key={comment._id}
+                            className="pl-4 border-l-2 border-gray-200 flex justify-between"
+                          >
+                            <div>
+                              <p className="text-gray-800">{comment.content}</p>
+                              <span className="text-xs text-gray-400">
+                                {comment.isAnonymous
+                                  ? comment.authorAlias
+                                  : comment.author?.name}
+                              </span>
+                            </div>
+
+                            {/* Delete Comment */}
+                            <button
+                              onClick={() => handleDeleteComment(comment._id)}
+                              className="text-xs text-red-500 hover:text-red-700"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             )}
           </div>
-
-          {selectedPost && (
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-2xl font-semibold mb-4">{selectedPost.post.title}</h2>
-              <p className="text-gray-600 mb-4">{selectedPost.post.content}</p>
-              <div className="mb-6">
-                <span className="text-sm text-gray-500">
-                  By {selectedPost.post.isAnonymous ? selectedPost.post.authorAlias : selectedPost.post.author?.name}
-                </span>
-              </div>
-
-              <div className="border-t pt-4">
-                <h3 className="font-semibold mb-4">Comments</h3>
-                <form onSubmit={handleAddComment} className="mb-4">
-                  <textarea
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md mb-2"
-                    placeholder="Add a comment..."
-                    value={newComment.content}
-                    onChange={(e) => setNewComment({ ...newComment, content: e.target.value })}
-                    required
-                  />
-                  <label className="flex items-center mb-2">
-                    <input
-                      type="checkbox"
-                      checked={newComment.isAnonymous}
-                      onChange={(e) => setNewComment({ ...newComment, isAnonymous: e.target.checked })}
-                      className="mr-2"
-                    />
-                    <span className="text-sm">Post anonymously</span>
-                  </label>
-                  <button
-                    type="submit"
-                    className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700"
-                  >
-                    Add Comment
-                  </button>
-                </form>
-
-                <div className="space-y-3">
-                  {selectedPost.comments.map((comment) => (
-                    <div key={comment._id} className="border-l-2 border-gray-200 pl-4">
-                      <p className="text-gray-700">{comment.content}</p>
-                      <span className="text-sm text-gray-500">
-                        {comment.isAnonymous ? comment.authorAlias : comment.author?.name} •{' '}
-                        {new Date(comment.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
