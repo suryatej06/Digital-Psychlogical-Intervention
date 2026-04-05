@@ -11,12 +11,12 @@ import Community from './pages/Community';
 import Chatbot from './pages/Chatbot';
 import Bookings from './pages/Bookings';
 import AdminPanel from './pages/AdminPanel';
+import Assessment from './pages/Assessment';
 
 function App() {
   return (
     <AuthProvider>
       <Router>
-        {/* Universal Mental Health Gradient */}
         <div className="min-h-screen bg-gradient-to-br from-rose-100 via-white to-indigo-100">
           
           <Navbar />
@@ -80,6 +80,17 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
+              {/* ── Assessment Module ── */}
+              <Route
+                path="/assessment"
+                element={
+                  <ProtectedRoute allowedRoles={['student']}>
+                    <Assessment />
+                  </ProtectedRoute>
+                }
+              />
+
             </Routes>
           </main>
 
