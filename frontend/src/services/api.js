@@ -101,5 +101,10 @@ export const adminAPI = {
   getFlaggedChatSessions: () => api.get('/admin/chat/flagged'),
   getDashboardStats: () => api.get('/admin/stats')
 };
-
+// Assessment API
+export const assessmentAPI = {
+  fetchQuestionnaire: (type) => api.get(`/assessments/${type}`),
+  submitResult: (payload) => api.post('/assessments/results', payload),
+  getMyResults: () => api.get('/assessments/results'),
+};
 export default api;

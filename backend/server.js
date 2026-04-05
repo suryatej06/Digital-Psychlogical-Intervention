@@ -13,6 +13,7 @@ import postRoutes from './routes/posts.js';
 import chatRoutes from './routes/chat.js';
 import bookingRoutes from './routes/bookings.js';
 import adminRoutes from './routes/admin.js';
+import assessmentRoutes from './routes/assessments.js';
 
 dotenv.config();
 
@@ -40,6 +41,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/api', apiRateLimiter);
 
 // Routes
+// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/colleges', collegeRoutes);
 app.use('/api/resources', resourceRoutes);
@@ -47,6 +49,7 @@ app.use('/api/posts', postRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/assessments', assessmentRoutes); // ← ADD THIS
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
