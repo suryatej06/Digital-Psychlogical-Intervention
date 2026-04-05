@@ -6,7 +6,7 @@ dotenv.config();
 
 const phq9 = {
   type: 'phq9',
-  title: 'PHQ-9: Patient Health Questionnaire',
+  title: 'PHQ-9 Depression Screening',
   questions: [
     {
       text: 'Little interest or pleasure in doing things',
@@ -81,7 +81,77 @@ const phq9 = {
       ],
     },
     {
-      text: 'Thoughts that you would be better off dead, or of hurting yourself in some way',
+      text: 'Thoughts that you would be better off dead or of hurting yourself in some way',
+      answers: [
+        { text: 'Not at all', score: 0 },
+        { text: 'Several days', score: 1 },
+        { text: 'More than half the days', score: 2 },
+        { text: 'Nearly every day', score: 3 },
+      ],
+    },
+  ],
+};
+
+const gad7 = {
+  type: 'gad7',
+  title: 'GAD-7 Anxiety Screening',
+  questions: [
+    {
+      text: 'Feeling nervous, anxious, or on edge',
+      answers: [
+        { text: 'Not at all', score: 0 },
+        { text: 'Several days', score: 1 },
+        { text: 'More than half the days', score: 2 },
+        { text: 'Nearly every day', score: 3 },
+      ],
+    },
+    {
+      text: 'Not being able to stop or control worrying',
+      answers: [
+        { text: 'Not at all', score: 0 },
+        { text: 'Several days', score: 1 },
+        { text: 'More than half the days', score: 2 },
+        { text: 'Nearly every day', score: 3 },
+      ],
+    },
+    {
+      text: 'Worrying too much about different things',
+      answers: [
+        { text: 'Not at all', score: 0 },
+        { text: 'Several days', score: 1 },
+        { text: 'More than half the days', score: 2 },
+        { text: 'Nearly every day', score: 3 },
+      ],
+    },
+    {
+      text: 'Trouble relaxing',
+      answers: [
+        { text: 'Not at all', score: 0 },
+        { text: 'Several days', score: 1 },
+        { text: 'More than half the days', score: 2 },
+        { text: 'Nearly every day', score: 3 },
+      ],
+    },
+    {
+      text: 'Being so restless that it is hard to sit still',
+      answers: [
+        { text: 'Not at all', score: 0 },
+        { text: 'Several days', score: 1 },
+        { text: 'More than half the days', score: 2 },
+        { text: 'Nearly every day', score: 3 },
+      ],
+    },
+    {
+      text: 'Becoming easily annoyed or irritable',
+      answers: [
+        { text: 'Not at all', score: 0 },
+        { text: 'Several days', score: 1 },
+        { text: 'More than half the days', score: 2 },
+        { text: 'Nearly every day', score: 3 },
+      ],
+    },
+    {
+      text: 'Feeling afraid, as if something awful might happen',
       answers: [
         { text: 'Not at all', score: 0 },
         { text: 'Several days', score: 1 },
@@ -93,20 +163,17 @@ const phq9 = {
 };
 
 async function seed() {
-  try {
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log('✅ Connected to MongoDB');
+  await mongoose.connect(process.env.MONGODB_URI);
+  console.log('Connected to MongoDB');
 
-    await Questionnaire.deleteOne({ type: 'phq9' });
-    await Questionnaire.create(phq9);
-    console.log('✅ PHQ-9 seeded successfully');
+  await Questionnaire.deleteMany({ type: { $in: ['phq9', 'gad7'] } });
+  await Questionnaire.insertMany([phq9, gad7]);
 
-    await mongoose.disconnect();
-    process.exit(0);
-  } catch (err) {
-    console.error('❌ Seed failed:', err);
-    process.exit(1);
-  }
+  console.log('Seeded PHQ-9 and GAD-7 questionnaires');
+  await mongoose.disconnect();
 }
 
-seed();
+seed().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

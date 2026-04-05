@@ -35,7 +35,7 @@ const Bookings = () => {
     try {
       setLoading(true);
       const response = await bookingsAPI.getStudentBookings();
-      setBookings(response.data.bookings);
+      setBookings(response.bookings ?? []);
     } catch (error) {
       console.error('Failed to fetch bookings:', error);
     } finally {
@@ -47,7 +47,7 @@ const Bookings = () => {
     try {
       setLoading(true);
       const response = await bookingsAPI.getCounselorBookings();
-      setBookings(response.data.bookings);
+      setBookings(response.bookings ?? []);
     } catch (error) {
       console.error('Failed to fetch bookings:', error);
     } finally {
@@ -58,7 +58,7 @@ const Bookings = () => {
   const fetchCounselors = async () => {
     try {
       const response = await bookingsAPI.getCounselors();
-      setCounselors(response.data.counselors || []);
+      setCounselors(response.counselors ?? []);
     } catch (error) {
       console.error('Failed to fetch counselors:', error);
     }

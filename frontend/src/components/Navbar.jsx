@@ -1,117 +1,85 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-export const Navbar = () => {
+export default function Navbar() {
   const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
+  function handleLogout() {
     logout();
-    navigate('/');
-  };
+    navigate('/login');
+  }
 
   return (
-    <nav className="bg-white shadow-lg">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex">
-            <Link to="/" className="flex items-center">
-              <span className="text-xl font-bold text-primary-600">Mental Health Support</span>
+    <nav className="bg-indigo-900 text-white px-6 py-3 flex items-center justify-between shadow-lg">
+      <Link to="/" className="font-bold text-lg tracking-tight">
+        MindSpace
+      </Link>
+
+      <div className="flex items-center gap-4 text-sm">
+        {!isAuthenticated ? (
+          <>
+            <Link to="/login" className="hover:text-indigo-200 transition-colors">
+              Login
             </Link>
-            {isAuthenticated && (
-              <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-                <Link
-                  to="/dashboard"
-                  className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                >
-                  Dashboard
+            <Link
+              to="/register"
+              className="bg-indigo-600 hover:bg-indigo-500 px-3 py-1.5 rounded-lg transition-colors"
+            >
+              Register
+            </Link>
+          </>
+        ) : (
+          <>
+            {/* Student nav */}
+            {user?.role === 'student' && (
+              <>
+                <Link to="/resources" className="hover:text-indigo-200 transition-colors">
+                  Resources
                 </Link>
-                {user?.role === 'student' && (
-                  <>
-                    <Link
-                      to="/resources"
-                      className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                    >
-                      Resources
-                    </Link>
-                    <Link
-                      to="/community"
-                      className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                    >
-                      Community
-                    </Link>
-                    <Link
-                      to="/chatbot"
-                      className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                    >
-                      Chatbot
-                    </Link>
-                    <Link
-                      to="/bookings"
-                      className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                    >
-                      Bookings
-                    </Link>
-                    {/* ── Assessment Module ── */}
-                    <Link
-                      to="/assessment"
-                      className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                    >
-                      Assessment
-                    </Link>
-                  </>
-                )}
-                {user?.role === 'counselor' && (
-                  <Link
-                    to="/bookings"
-                    className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                  >
-                    My Bookings
-                  </Link>
-                )}
-                {user?.role === 'admin' && (
-                  <Link
-                    to="/admin"
-                    className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                  >
-                    Admin Panel
-                  </Link>
-                )}
-              </div>
+                <Link to="/community" className="hover:text-indigo-200 transition-colors">
+                  Community
+                </Link>
+                <Link to="/chatbot" className="hover:text-indigo-200 transition-colors">
+                  Chatbot
+                </Link>
+                <Link to="/bookings" className="hover:text-indigo-200 transition-colors">
+                  Bookings
+                </Link>
+                <Link to="/assessment" className="hover:text-indigo-200 transition-colors">
+                  Assessment
+                </Link>
+                <Link to="/results" className="hover:text-indigo-200 transition-colors">
+                  History
+                </Link>
+              </>
             )}
-          </div>
-          <div className="flex items-center">
-            {isAuthenticated ? (
-              <div className="flex items-center space-x-4">
-                <span className="text-gray-700 text-sm">
-                  {user?.name} ({user?.role})
-                </span>
-                <button
-                  onClick={handleLogout}
-                  className="bg-primary-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-700"
-                >
-                  Logout
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-4">
-                <Link
-                  to="/login"
-                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Login
+
+            {/* Counselor nav */}
+            {user?.role === 'counselor' && (
+              <>
+                <Link to="/bookings" className="hover:text-indigo-200 transition-colors">
+                  My Sessions
                 </Link>
-                <Link
-                  to="/register"
-                  className="bg-primary-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-700"
-                >
-                  Register
-                </Link>
-              </div>
+              </>
             )}
-          </div>
-        </div>
+
+            {/* Admin nav */}
+            {user?.role === 'admin' && (
+              <Link to="/admin" className="hover:text-indigo-200 transition-colors">
+                Admin Panel
+              </Link>
+            )}
+
+            <button
+              onClick={handleLogout}
+              className="ml-2 text-indigo-300 hover:text-white transition-colors"
+            >
+              Logout
+            </button>
+          </>
+        )}
       </div>
     </nav>
   );
-};
+}

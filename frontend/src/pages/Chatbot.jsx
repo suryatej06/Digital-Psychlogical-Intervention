@@ -25,8 +25,8 @@ const Chatbot = () => {
     try {
       setSessionLoading(true);
       const response = await chatAPI.getSession();
-      setSession(response.data.session);
-      setMessages(response.data.messages || []);
+      setSession(response.session);
+      setMessages(response.messages ?? []);
     } catch (error) {
       console.error('Failed to load session:', error);
     } finally {
@@ -53,7 +53,7 @@ const Chatbot = () => {
 
     try {
       const response = await chatAPI.sendMessage(userMessage);
-      const assistantMessage = response.data.message;
+      const assistantMessage = response.message;
       
       // Replace temp message and add assistant response
       setMessages((prev) => [
@@ -68,12 +68,12 @@ const Chatbot = () => {
       ]);
 
       // Update session info
-      if (response.data.session) {
-        setSession(response.data.session);
+      if (response.session) {
+        setSession(response.session);
         
         // Show risk warning if needed
-        if (response.data.session.isFlagged || response.data.session.suggestion) {
-          alert(response.data.session.suggestion || 'Your session has been flagged for review. Please consider speaking with a counselor.');
+        if (response.session.isFlagged || response.session.suggestion) {
+          alert(response.session.suggestion || 'Your session has been flagged for review. Please consider speaking with a counselor.');
         }
       }
     } catch (error) {

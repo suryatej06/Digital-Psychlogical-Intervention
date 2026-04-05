@@ -1,103 +1,117 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import { Navbar } from './components/Navbar';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import Navbar from './components/Navbar';
+import ErrorBoundary from './components/ErrorBoundary';
+
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import Assessment from './pages/Assessment';
+import AssessmentHome from './pages/AssessmentHome';
+import ResultsHistory from './pages/ResultsHistory';
 import Resources from './pages/Resources';
 import Community from './pages/Community';
 import Chatbot from './pages/Chatbot';
 import Bookings from './pages/Bookings';
 import AdminPanel from './pages/AdminPanel';
-import Assessment from './pages/Assessment';
 
-function App() {
+export default function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen bg-gradient-to-br from-rose-100 via-white to-indigo-100">
-          
-          <Navbar />
+        <Navbar />
+        <ErrorBoundary>
+          <Routes>
+          {/* Public routes */}
+          <Route path="/" element={<Landing />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
-          <main>
-            <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
+          {/* Student + Counselor shared routes */}
+          <Route
+            path="/bookings"
+            element={
+              <ProtectedRoute allowedRoles={['student', 'counselor']}>
+                <Bookings />
+              </ProtectedRoute>
+            }
+          />
 
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
+          {/* Student-only routes */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/assessment"
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <AssessmentHome />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/assessment/:type"
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <Assessment />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/results"
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <ResultsHistory />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/resources"
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <Resources />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/community"
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <Community />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/chatbot"
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <Chatbot />
+              </ProtectedRoute>
+            }
+          />
 
-              <Route
-                path="/resources"
-                element={
-                  <ProtectedRoute allowedRoles={['student']}>
-                    <Resources />
-                  </ProtectedRoute>
-                }
-              />
+          {/* Admin routes */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminPanel />
+              </ProtectedRoute>
+            }
+          />
 
-              <Route
-                path="/community"
-                element={
-                  <ProtectedRoute allowedRoles={['student']}>
-                    <Community />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/chatbot"
-                element={
-                  <ProtectedRoute allowedRoles={['student']}>
-                    <Chatbot />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/bookings"
-                element={
-                  <ProtectedRoute allowedRoles={['student', 'counselor']}>
-                    <Bookings />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <AdminPanel />
-                  </ProtectedRoute>
-                }
-              />
-
-              {/* ── Assessment Module ── */}
-              <Route
-                path="/assessment"
-                element={
-                  <ProtectedRoute allowedRoles={['student']}>
-                    <Assessment />
-                  </ProtectedRoute>
-                }
-              />
-
-            </Routes>
-          </main>
-
-        </div>
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </ErrorBoundary>
       </Router>
     </AuthProvider>
   );
 }
-
-export default App;

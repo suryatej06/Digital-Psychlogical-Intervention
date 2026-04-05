@@ -17,6 +17,9 @@ export const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   }
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+    // Redirect to role-appropriate home to prevent infinite redirect loops
+    if (user.role === 'admin') return <Navigate to="/admin" replace />;
+    if (user.role === 'counselor') return <Navigate to="/bookings" replace />;
     return <Navigate to="/dashboard" replace />;
   }
 

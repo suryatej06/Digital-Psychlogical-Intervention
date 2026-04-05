@@ -8,11 +8,13 @@ A production-ready multi-tenant Mental Health Support Platform built with the ME
 - **Multi-Tenant Architecture**: College-based data isolation
 - **Role-Based Access Control**: Student, Counselor, and Admin roles
 - **Authentication**: JWT-based secure authentication
+- **Mental Health Screenings**: Validated PHQ-9 and GAD-7 assessments (Phase 4)
 - **Resources Library**: Audio, video, and article resources
 - **Community Forum**: Anonymous posting and commenting
 - **AI Chatbot**: OpenAI-powered mental health support with risk detection
 - **Counseling Booking**: Schedule and manage counseling sessions
 - **Admin Dashboard**: Manage users, resources, and flagged content
+- **Stability & Polish**: React Error Boundaries, Disclaimer Consent Modals, Mobile-responsive UI (Phase 5)
 
 ### Security Features
 - Password hashing with bcrypt
@@ -248,6 +250,11 @@ mental-health-platform/
 - `POST /api/chat/session/:sessionId/close` - Close session (Student only)
 - `GET /api/chat/history` - Get chat history (Student only)
 
+### Assessments
+- `GET /api/assessments/results` - Get user's assessment history
+- `POST /api/assessments/results` - Save a new assessment result
+- `GET /api/assessments/:type` - Get questionnaire by type (phq9, gad7)
+
 ### Bookings
 - `POST /api/bookings/book` - Book counseling session (Student only)
 - `GET /api/bookings/student` - Get student bookings
@@ -266,10 +273,11 @@ mental-health-platform/
 
 ### For Students
 1. Register with your college
-2. Browse resources in the Resources section
-3. Participate in the Community forum (optionally anonymous)
-4. Use the AI Chatbot for instant support
-5. Book counseling sessions with available counselors
+2. Take mental health screenings (PHQ-9 or GAD-7) to track your wellbeing
+3. Browse resources in the Resources section
+4. Participate in the Community forum (optionally anonymous)
+5. Use the AI Chatbot for instant support
+6. Book counseling sessions with available counselors
 
 ### For Counselors
 1. Register as a counselor
@@ -373,6 +381,10 @@ To test the platform:
 - Risk detection scans for crisis keywords and calculates risk scores
 - All data is isolated by `collegeId` for multi-tenant security
 - Anonymous posts/comments store user ID but display alias/name based on `isAnonymous` flag
+
+## 🤝 Road Map / Upcoming Features (Phase 6)
+- **Smart Resource Hub**: Personalised AI-driven recommendations based on PHQ-9/GAD-7 severity scores.
+- **Advanced matching**: Smart matching metrics connecting assessment question scores with specific module topics.
 
 ## 🤝 Contributing
 

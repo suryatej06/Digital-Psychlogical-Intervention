@@ -21,7 +21,10 @@ const Login = () => {
     const result = await login(formData.email, formData.password);
 
     if (result.success) {
-      navigate('/dashboard');
+      const role = result.user?.role;
+      if (role === 'admin') navigate('/admin');
+      else if (role === 'counselor') navigate('/bookings');
+      else navigate('/dashboard');
     } else {
       setError(result.message || 'Login failed');
     }

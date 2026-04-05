@@ -15,3 +15,11 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* ── Mobile responsive tweaks for assessment / inline-styles pages ── */
+@media (max-width: 480px) {
+  /* Give inline-styled glass cards more breathing room on tiny screens */
+  .assessment-card-compact {
+    padding: 1.5rem !important;
+  }
+}

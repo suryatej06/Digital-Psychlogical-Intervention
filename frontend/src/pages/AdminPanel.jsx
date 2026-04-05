@@ -38,7 +38,7 @@ const AdminPanel = () => {
   const loadResources = async () => {
     try {
       const response = await resourcesAPI.getAll({});
-      setResources(response.data.resources);
+      setResources(response.resources ?? []);
     } catch (error) {
       console.error('Failed to load resources:', error);
     }
@@ -47,7 +47,7 @@ const AdminPanel = () => {
   const loadDashboardStats = async () => {
     try {
       const response = await adminAPI.getDashboardStats();
-      setStats(response.data.stats);
+      setStats(response.stats);
     } catch (error) {
       console.error('Failed to load stats:', error);
     } finally {
@@ -58,7 +58,7 @@ const AdminPanel = () => {
   const loadUsers = async () => {
     try {
       const response = await adminAPI.getAllUsers();
-      setUsers(response.data.users);
+      setUsers(response.users ?? []);
     } catch (error) {
       console.error('Failed to load users:', error);
     }
@@ -67,7 +67,7 @@ const AdminPanel = () => {
   const loadFlaggedPosts = async () => {
     try {
       const response = await adminAPI.getFlaggedPosts();
-      setFlaggedPosts(response.data.posts);
+      setFlaggedPosts(response.posts ?? []);
     } catch (error) {
       console.error('Failed to load flagged posts:', error);
     }
@@ -76,7 +76,7 @@ const AdminPanel = () => {
   const loadFlaggedSessions = async () => {
     try {
       const response = await adminAPI.getFlaggedChatSessions();
-      setFlaggedSessions(response.data.sessions);
+      setFlaggedSessions(response.sessions ?? []);
     } catch (error) {
       console.error('Failed to load flagged sessions:', error);
     }
