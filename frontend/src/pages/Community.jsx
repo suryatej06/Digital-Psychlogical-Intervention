@@ -17,7 +17,7 @@ const Community = () => {
     try {
       setLoading(true);
       const response = await postsAPI.getAll();
-      setPosts(response.data.posts);
+      setPosts(response.posts ?? []);
     } catch (error) {
       console.error('Failed to fetch posts:', error);
     } finally {
@@ -28,7 +28,7 @@ const Community = () => {
   const fetchPostDetails = async (postId) => {
     try {
       const response = await postsAPI.getById(postId);
-      setSelectedPost(response.data);
+      setSelectedPost(response);
     } catch (error) {
       console.error('Failed to fetch post details:', error);
     }

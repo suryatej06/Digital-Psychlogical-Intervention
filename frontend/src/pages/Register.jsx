@@ -19,17 +19,18 @@ const Register = () => {
   const { register } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchColleges = async () => {
-      try {
-        const response = await collegesAPI.getAll();
-        setColleges(response.data.colleges);
-      } catch (error) {
-        console.error('Failed to fetch colleges:', error);
-      }
-    };
-    fetchColleges();
-  }, []);
+useEffect(() => {
+  const fetchColleges = async () => {
+    try {
+      const response = await collegesAPI.getAll();
+      setColleges(response.colleges ?? response);  // unwrap { colleges: [] } or plain []
+    } catch (error) {
+      console.error('Failed to fetch colleges:', error);
+    }
+  };
+
+  fetchColleges();
+}, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -60,7 +61,10 @@ const Register = () => {
     const result = await register(registerData);
 
     if (result.success) {
-      navigate('/dashboard');
+      const role = result.user?.role;
+      if (role === 'admin') navigate('/admin');
+      else if (role === 'counselor') navigate('/bookings');
+      else navigate('/dashboard');
     } else {
       setError(result.message || 'Registration failed');
     }

@@ -19,10 +19,11 @@ const Resources = () => {
       if (filters.category) params.category = filters.category;
 
       const response = await resourcesAPI.getAll(params);
-      setResources(response.data.resources);
+      const list = response.resources ?? [];
+      setResources(list);
 
       // Extract unique categories
-      const uniqueCategories = [...new Set(response.data.resources.map(r => r.category))];
+      const uniqueCategories = [...new Set(list.map(r => r.category))];
       setCategories(uniqueCategories);
     } catch (error) {
       console.error('Failed to fetch resources:', error);

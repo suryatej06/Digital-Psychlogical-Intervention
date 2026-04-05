@@ -92,14 +92,14 @@ export const sendMessage = async (req, res, next) => {
       session.riskScore = 100; // Maximum risk score
     } else {
       // Get conversation history
-      const history = await Message.find({ sessionId: session._id })
+      const rawHistory = await Message.find({ sessionId: session._id })
         .sort({ createdAt: -1 })
         .limit(10)
-        .reverse()
-        .map(msg => ({
-          role: msg.role,
-          content: msg.content
-        }));
+        .lean();
+      const history = rawHistory.reverse().map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
 
       // Get AI response
       aiResponse = await getAIResponse(content, history);

@@ -26,8 +26,8 @@ export const AuthProvider = ({ children }) => {
         setUser(JSON.parse(storedUser));
         try {
           const response = await authAPI.getProfile();
-          setUser(response.data.user);
-          localStorage.setItem('user', JSON.stringify(response.data.user));
+          setUser(response.user);
+          localStorage.setItem('user', JSON.stringify(response.user));
         } catch (error) {
           console.error('Failed to fetch profile:', error);
           logout();
@@ -42,14 +42,14 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await authAPI.login({ email, password });
-      const { token: newToken, user: userData } = response.data;
+      const { token: newToken, user: userData } = response;
       
       setToken(newToken);
       setUser(userData);
       localStorage.setItem('token', newToken);
       localStorage.setItem('user', JSON.stringify(userData));
       
-      return { success: true };
+      return { success: true, user: userData };
     } catch (error) {
       return {
         success: false,
@@ -61,14 +61,14 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const response = await authAPI.register(userData);
-      const { token: newToken, user: newUser } = response.data;
+      const { token: newToken, user: newUser } = response;
       
       setToken(newToken);
       setUser(newUser);
       localStorage.setItem('token', newToken);
       localStorage.setItem('user', JSON.stringify(newUser));
       
-      return { success: true };
+      return { success: true, user: newUser };
     } catch (error) {
       return {
         success: false,
