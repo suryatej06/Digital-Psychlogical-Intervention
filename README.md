@@ -391,9 +391,11 @@ To test the platform:
 - All data is isolated by `collegeId` for multi-tenant security
 - Anonymous posts/comments store user ID but display alias/name based on `isAnonymous` flag
 
-## 🤝 Road Map / Upcoming Features (Phase 6)
-- **Smart Resource Hub**: Personalised AI-driven recommendations based on PHQ-9/GAD-7 severity scores.
-- **Advanced matching**: Smart matching metrics connecting assessment question scores with specific module topics.
+## ✅ Phase 6 Completed: Smart Resource Hub & UI Overhaul
+- **AI-Driven Recommendations**: Dynamically generates personalized resource tips via OpenAI based on the user's latest PHQ-9/GAD-7 assessment severities.
+- **Smart Tag Ranking**: Automatically bumps priority resources (e.g. Anxiety/Crisis tags for high GAD-7 scores) to the top of the library grid.
+- **Unified Glassmorphic UI**: The entire Assessment pipeline and Smart Resource Hub now feature a stunning, Tailwind-powered frosted glass aesthetic with vibrant gradients, micro-animations, and seamless responsiveness.
+- **Refactoring to ES Modules**: Entire backend controllers, models, routes, and `seed.js` script successfully migrated to pure ES modules using modern middleware architecture.
 
 ## 🤝 Contributing
 

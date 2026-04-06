@@ -1,95 +1,5 @@
-const overlay = {
-  position: 'fixed',
-  inset: 0,
-  background: 'rgba(0,0,0,0.65)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  zIndex: 1000,
-  padding: '1rem',
-};
-
-const card = {
-  background: 'rgba(30, 27, 75, 0.97)',
-  backdropFilter: 'blur(20px)',
-  border: '1px solid rgba(255,255,255,0.14)',
-  borderRadius: '20px',
-  padding: '2.25rem',
-  width: '100%',
-  maxWidth: '480px',
-};
-
-const iconStyle = {
-  fontSize: '2rem',
-  marginBottom: '1rem',
-  textAlign: 'center',
-};
-
-const titleStyle = {
-  fontSize: '1.25rem',
-  fontWeight: '700',
-  color: '#ffffff',
-  marginBottom: '1rem',
-  textAlign: 'center',
-};
-
-const bodyStyle = {
-  fontSize: '0.9rem',
-  color: 'rgba(255,255,255,0.65)',
-  lineHeight: '1.7',
-  marginBottom: '0.75rem',
-};
-
-const crisisBox = {
-  background: 'rgba(239,68,68,0.1)',
-  border: '1px solid rgba(239,68,68,0.3)',
-  borderRadius: '10px',
-  padding: '10px 14px',
-  marginBottom: '1.5rem',
-  color: '#fca5a5',
-  fontSize: '0.85rem',
-  lineHeight: '1.6',
-};
-
-const btnRow = {
-  display: 'flex',
-  gap: '10px',
-  flexDirection: 'column',
-};
-
-const primaryBtn = {
-  padding: '12px',
-  borderRadius: '10px',
-  border: 'none',
-  background: '#6366f1',
-  color: '#ffffff',
-  fontWeight: '600',
-  fontSize: '0.95rem',
-  cursor: 'pointer',
-  width: '100%',
-};
-
-const outlineBtn = {
-  padding: '11px',
-  borderRadius: '10px',
-  border: '1px solid rgba(255,255,255,0.2)',
-  background: 'transparent',
-  color: 'rgba(255,255,255,0.65)',
-  fontWeight: '500',
-  fontSize: '0.9rem',
-  cursor: 'pointer',
-  width: '100%',
-};
-
 const STORAGE_KEY = 'disclaimerAcknowledged';
 
-/**
- * DisclaimerModal
- * Shows once per browser session (sessionStorage).
- * Props:
- *   onAcknowledge  () => void  — called when user clicks "I Understand"
- *   onBack         () => void  — called when user clicks "Go Back"
- */
 export default function DisclaimerModal({ onAcknowledge, onBack }) {
   // Already acknowledged this session — render nothing
   if (sessionStorage.getItem(STORAGE_KEY) === 'true') {
@@ -102,33 +12,50 @@ export default function DisclaimerModal({ onAcknowledge, onBack }) {
   }
 
   return (
-    <div style={overlay}>
-      <div style={card} role="dialog" aria-modal="true" aria-labelledby="disclaimer-title">
-        <div style={iconStyle}>📋</div>
-        <h2 id="disclaimer-title" style={titleStyle}>Important Notice</h2>
+    <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center z-[1000] p-4">
+      <div
+        className="bg-white/80 backdrop-blur-2xl border border-white rounded-[24px] p-8 sm:p-10 w-full max-w-lg shadow-2xl animate-in fade-in zoom-in duration-300"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="disclaimer-title"
+      >
+        <div className="text-4xl mb-4 text-center">📋</div>
+        <h2 id="disclaimer-title" className="text-2xl font-extrabold text-gray-900 mb-6 text-center tracking-tight">
+          Important Notice
+        </h2>
 
-        <p style={bodyStyle}>
-          These questionnaires are <strong style={{ color: '#c7d2fe' }}>validated clinical screening tools</strong>,
-          but they are <strong style={{ color: '#c7d2fe' }}>not a substitute for professional diagnosis</strong>
+        <p className="text-gray-600 text-sm leading-relaxed mb-4 font-medium">
+          These questionnaires are <strong className="text-indigo-600">validated clinical screening tools</strong>,
+          but they are <strong className="text-indigo-600">not a substitute for professional diagnosis</strong>
           or medical advice. Results are for personal awareness only and are not used to diagnose any condition.
         </p>
 
-        <p style={bodyStyle}>
+        <p className="text-gray-600 text-sm leading-relaxed mb-6 font-medium">
           Your responses are stored securely and are only visible to you and authorised counsellors at your institution.
         </p>
 
-        <div style={crisisBox}>
+        <div className="bg-rose-50 border border-rose-200 rounded-2xl p-5 mb-8 text-rose-800 text-sm leading-relaxed font-medium shadow-sm">
           🚨 <strong>If you are in crisis or immediate danger</strong>, please stop and contact:
-          <br />• National Crisis Line: <strong>988</strong> (call or text, 24/7)
-          <br />• Emergency Services: <strong>911</strong>
-          <br />• Crisis Text Line: text <strong>HOME</strong> to 741741
+          <ul className="mt-3 space-y-2 opacity-90">
+            <li>• National Crisis Line: <strong>988</strong> (call or text, 24/7)</li>
+            <li>• Emergency Services: <strong>911</strong></li>
+            <li>• Crisis Text Line: text <strong>HOME</strong> to 741741</li>
+          </ul>
         </div>
 
-        <div style={btnRow}>
-          <button id="disclaimer-continue-btn" style={primaryBtn} onClick={handleAcknowledge}>
+        <div className="flex flex-col gap-3">
+          <button
+            id="disclaimer-continue-btn"
+            className="w-full py-3.5 rounded-xl bg-indigo-600 text-white font-bold text-[15px] shadow-md transition-all hover:bg-indigo-700 hover:-translate-y-0.5 hover:shadow-lg"
+            onClick={handleAcknowledge}
+          >
             I Understand — Continue
           </button>
-          <button id="disclaimer-back-btn" style={outlineBtn} onClick={onBack}>
+          <button
+            id="disclaimer-back-btn"
+            className="w-full py-3.5 rounded-xl border-2 border-gray-200 bg-white/50 text-gray-700 font-bold text-[15px] transition-all hover:bg-white hover:border-gray-300"
+            onClick={onBack}
+          >
             Go Back
           </button>
         </div>
