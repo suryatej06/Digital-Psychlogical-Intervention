@@ -12,17 +12,28 @@ function getMaxScore(type) {
 
 function getSeverityStyle(score, type) {
   if (type === 'gad7') {
-    if (score <= 4)  return { label: 'Minimal anxiety',  color: '#22c55e' };
-    if (score <= 9)  return { label: 'Mild anxiety',     color: '#3b82f6' };
-    if (score <= 14) return { label: 'Moderate anxiety', color: '#eab308' };
-    return                  { label: 'Severe anxiety',   color: '#ef4444' };
+    if (score <= 4) return { label: 'Minimal anxiety', color: 'emerald' };
+    if (score <= 9) return { label: 'Mild anxiety', color: 'blue' };
+    if (score <= 14) return { label: 'Moderate anxiety', color: 'amber' };
+    return { label: 'Severe anxiety', color: 'red' };
   }
   // Default: PHQ-9
-  if (score <= 4)  return { label: 'Minimal depression',          color: '#22c55e' };
-  if (score <= 9)  return { label: 'Mild depression',              color: '#3b82f6' };
-  if (score <= 14) return { label: 'Moderate depression',          color: '#eab308' };
-  if (score <= 19) return { label: 'Moderately severe depression', color: '#f97316' };
-  return                  { label: 'Severe depression',            color: '#ef4444' };
+  if (score <= 4) return { label: 'Minimal depression', color: 'emerald' };
+  if (score <= 9) return { label: 'Mild depression', color: 'blue' };
+  if (score <= 14) return { label: 'Moderate depression', color: 'amber' };
+  if (score <= 19) return { label: 'Moderately severe depression', color: 'orange' };
+  return { label: 'Severe depression', color: 'red' };
+}
+
+function getSeverityClasses(color) {
+  const map = {
+    emerald: 'text-emerald-700 bg-emerald-100 border-emerald-300 from-emerald-400 to-emerald-500',
+    blue: 'text-blue-700 bg-blue-100 border-blue-300 from-blue-400 to-blue-500',
+    amber: 'text-amber-800 bg-amber-100 border-amber-300 from-amber-400 to-amber-500',
+    orange: 'text-orange-800 bg-orange-100 border-orange-300 from-orange-400 to-orange-500',
+    red: 'text-red-800 bg-red-100 border-red-300 from-red-400 to-red-500',
+  };
+  return map[color] || map.blue;
 }
 
 function formatDate(iso) {
@@ -41,166 +52,6 @@ function typeLabel(type) {
   return type.toUpperCase();
 }
 
-// ── Styles ────────────────────────────────────────────────────────────────────
-
-const s = {
-  page: {
-    minHeight: '100vh',
-    background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #1e3a5f 100%)',
-    padding: '3rem 1.5rem',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-  },
-  inner: {
-    width: '100%',
-    maxWidth: '700px',
-  },
-  heading: {
-    fontSize: '1.75rem',
-    fontWeight: '700',
-    color: '#ffffff',
-    margin: '0 0 0.5rem',
-  },
-  subheading: {
-    fontSize: '0.9rem',
-    color: 'rgba(255,255,255,0.5)',
-    marginBottom: '2rem',
-  },
-  metricsRow: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
-    gap: '1rem',
-    marginBottom: '2rem',
-  },
-  metricCard: {
-    background: 'rgba(255,255,255,0.07)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: '12px',
-    padding: '1.25rem 1rem',
-    textAlign: 'center',
-  },
-  metricValue: {
-    fontSize: '1.75rem',
-    fontWeight: '700',
-    color: '#ffffff',
-    display: 'block',
-  },
-  metricLabel: {
-    fontSize: '11px',
-    color: 'rgba(255,255,255,0.4)',
-    textTransform: 'uppercase',
-    letterSpacing: '0.07em',
-    marginTop: '4px',
-    display: 'block',
-  },
-  resultCard: {
-    background: 'rgba(255,255,255,0.06)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: '14px',
-    padding: '1.5rem',
-    marginBottom: '1rem',
-  },
-  resultTop: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: '1rem',
-  },
-  resultTypeBadge: (color) => ({
-    fontSize: '11px',
-    fontWeight: '600',
-    letterSpacing: '0.08em',
-    textTransform: 'uppercase',
-    color: color,
-    background: `${color}18`,
-    border: `1px solid ${color}44`,
-    borderRadius: '999px',
-    padding: '3px 10px',
-  }),
-  resultScore: {
-    fontSize: '1.4rem',
-    fontWeight: '700',
-    color: '#ffffff',
-  },
-  resultScoreMax: {
-    fontSize: '0.8rem',
-    color: 'rgba(255,255,255,0.4)',
-  },
-  severityBadge: (color) => ({
-    fontSize: '12px',
-    fontWeight: '500',
-    color: color,
-    border: `1px solid ${color}`,
-    borderRadius: '999px',
-    padding: '3px 12px',
-    display: 'inline-block',
-    marginBottom: '0.75rem',
-  }),
-  barTrack: {
-    height: '6px',
-    background: 'rgba(255,255,255,0.1)',
-    borderRadius: '999px',
-    overflow: 'hidden',
-    marginBottom: '0.75rem',
-  },
-  barFill: (pct, color) => ({
-    height: '100%',
-    width: `${pct}%`,
-    background: color,
-    borderRadius: '999px',
-    transition: 'width 0.5s ease',
-  }),
-  resultMeta: {
-    fontSize: '12px',
-    color: 'rgba(255,255,255,0.35)',
-  },
-  emptyState: {
-    textAlign: 'center',
-    padding: '4rem 2rem',
-  },
-  emptyIcon: {
-    fontSize: '3rem',
-    marginBottom: '1rem',
-  },
-  emptyTitle: {
-    fontSize: '1.25rem',
-    fontWeight: '600',
-    color: '#ffffff',
-    marginBottom: '0.5rem',
-  },
-  emptyDesc: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: '0.9rem',
-    marginBottom: '1.5rem',
-  },
-  ctaBtn: {
-    padding: '12px 28px',
-    borderRadius: '10px',
-    border: 'none',
-    background: '#6366f1',
-    color: '#ffffff',
-    fontWeight: '600',
-    fontSize: '0.95rem',
-    cursor: 'pointer',
-  },
-  bottomBtn: {
-    marginTop: '1.5rem',
-    padding: '12px 28px',
-    borderRadius: '10px',
-    border: '1px solid rgba(255,255,255,0.2)',
-    background: 'transparent',
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: '0.9rem',
-    cursor: 'pointer',
-    display: 'block',
-    marginLeft: 'auto',
-    marginRight: 'auto',
-  },
-  loadingText: { color: 'rgba(255,255,255,0.6)', textAlign: 'center', paddingTop: '4rem' },
-  errorText: { color: '#f87171', textAlign: 'center', paddingTop: '4rem' },
-};
-
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function ResultsHistory() {
@@ -217,8 +68,21 @@ export default function ResultsHistory() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div style={s.page}><p style={s.loadingText}>Loading your results…</p></div>;
-  if (error) return <div style={s.page}><p style={s.errorText}>{error}</p></div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center">
+        <p className="text-indigo-600 font-medium animate-pulse text-lg">Loading your results…</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
+        <p className="text-red-500 font-medium text-lg">{error}</p>
+      </div>
+    );
+  }
 
   // Metrics
   const total = results.length;
@@ -226,72 +90,98 @@ export default function ResultsHistory() {
   const bestScore = total > 0 ? Math.min(...results.map((r) => r.totalScore)) : 0;
 
   return (
-    <div style={s.page}>
-      <div style={s.inner}>
-        <h1 style={s.heading}>Assessment History</h1>
-        <p style={s.subheading}>All your completed mental health screenings</p>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-3xl mx-auto w-full">
+        {/* Header */}
+        <div className="mb-10 text-center sm:text-left">
+          <span className="inline-block bg-white/60 backdrop-blur-md border border-indigo-200 text-indigo-700 rounded-full px-4 py-1 text-xs font-bold tracking-widest uppercase mb-4 shadow-sm">
+            Mental Health History
+          </span>
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 tracking-tight mb-4">
+            Assessment History
+          </h1>
+          <p className="text-lg text-gray-600 font-medium leading-relaxed">
+            All your completed mental health screenings over time.
+          </p>
+        </div>
 
         {/* Metric cards */}
-        <div style={s.metricsRow}>
-          <div style={s.metricCard}>
-            <span style={s.metricValue}>{total}</span>
-            <span style={s.metricLabel}>Total attempts</span>
+        <div className="grid grid-cols-3 gap-3 sm:gap-6 mb-10 w-full">
+          <div className="bg-white/60 backdrop-blur-xl border border-white/50 rounded-3xl p-6 text-center shadow-lg hover:-translate-y-1 transition-transform">
+            <span className="block text-4xl sm:text-5xl font-black text-indigo-600 mb-1">{total}</span>
+            <span className="block text-[10px] sm:text-xs font-bold uppercase tracking-widest text-gray-500">Total Attempts</span>
           </div>
-          <div style={s.metricCard}>
-            <span style={s.metricValue}>{total > 0 ? avgScore : '—'}</span>
-            <span style={s.metricLabel}>Average score</span>
+          <div className="bg-white/60 backdrop-blur-xl border border-white/50 rounded-3xl p-6 text-center shadow-lg hover:-translate-y-1 transition-transform">
+            <span className="block text-4xl sm:text-5xl font-black text-purple-600 mb-1">{total > 0 ? avgScore : '—'}</span>
+            <span className="block text-[10px] sm:text-xs font-bold uppercase tracking-widest text-gray-500">Average Score</span>
           </div>
-          <div style={s.metricCard}>
-            <span style={s.metricValue}>{total > 0 ? bestScore : '—'}</span>
-            <span style={s.metricLabel}>Best score</span>
+          <div className="bg-white/60 backdrop-blur-xl border border-white/50 rounded-3xl p-6 text-center shadow-lg hover:-translate-y-1 transition-transform">
+            <span className="block text-4xl sm:text-5xl font-black text-pink-600 mb-1">{total > 0 ? bestScore : '—'}</span>
+            <span className="block text-[10px] sm:text-xs font-bold uppercase tracking-widest text-gray-500">Lowest Score</span>
           </div>
         </div>
 
         {/* Results list */}
         {total === 0 ? (
-          <div style={s.emptyState}>
-            <div style={s.emptyIcon}>📋</div>
-            <p style={s.emptyTitle}>No assessments yet</p>
-            <p style={s.emptyDesc}>Take your first screening to see your results here.</p>
-            <button style={s.ctaBtn} onClick={() => navigate('/assessment')}>
+          <div className="bg-white/60 backdrop-blur-xl border border-white/50 rounded-3xl p-12 text-center shadow-lg">
+            <div className="text-5xl mb-4">📋</div>
+            <p className="text-2xl font-bold text-gray-900 mb-2">No assessments yet</p>
+            <p className="text-gray-500 mb-8 font-medium">Take your first screening to see your results here.</p>
+            <button
+              className="px-8 py-3 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all"
+              onClick={() => navigate('/assessment')}
+            >
               Take an assessment
             </button>
           </div>
         ) : (
-          results.map((result) => {
-            const { label, color } = getSeverityStyle(result.totalScore, result.questionnaireType);
-            const max = getMaxScore(result.questionnaireType);
-            const pct = Math.round((result.totalScore / max) * 100);
+          <div className="space-y-4">
+            {results.map((result) => {
+              const { label, color } = getSeverityStyle(result.totalScore, result.questionnaireType);
+              const classes = getSeverityClasses(color);
+              const max = getMaxScore(result.questionnaireType);
+              const pct = Math.round((result.totalScore / max) * 100);
 
-            return (
-              <div key={result._id} style={s.resultCard}>
-                <div style={s.resultTop}>
-                  <div>
-                    <span style={s.resultTypeBadge(color)}>
-                      {typeLabel(result.questionnaireType)}
-                    </span>
+              // extract just the bg string manually for the badge
+              const twClasses = classes.split(' ');
+              const badgeClasses = twClasses.slice(0, 3).join(' '); // text-x bg-x border-x
+              const gradientClasses = twClasses.slice(3).join(' '); // from-x to-x
+
+              return (
+                <div key={result._id} className="bg-white/70 backdrop-blur-xl border border-white/50 shadow-md hover:shadow-lg transition-shadow rounded-3xl p-6 sm:p-8 flex flex-col">
+                  <div className="flex justify-between items-start mb-6">
+                    <div>
+                      <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${badgeClasses}`}>
+                        {typeLabel(result.questionnaireType)}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-4xl font-extrabold text-gray-900 leading-none">{result.totalScore}</span>
+                      <span className="text-lg font-bold text-gray-400"> / {max}</span>
+                    </div>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <span style={s.resultScore}>{result.totalScore}</span>
-                    <span style={s.resultScoreMax}> / {max}</span>
+
+                  <span className={`inline-block self-start px-4 py-1.5 rounded-full text-sm font-bold border mb-4 ${badgeClasses}`}>
+                    {label}
+                  </span>
+
+                  <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden mb-6 shadow-inner">
+                    <div className={`h-full bg-gradient-to-r ${gradientClasses} rounded-full transition-all duration-1000 ease-out`} style={{ width: `${pct}%` }} />
                   </div>
+
+                  <p className="text-xs font-bold text-gray-400 tracking-widest uppercase">
+                    {formatDate(result.createdAt)} · {formatTime(result.createdAt)}
+                  </p>
                 </div>
-
-                <span style={s.severityBadge(color)}>{label}</span>
-
-                <div style={s.barTrack}>
-                  <div style={s.barFill(pct, color)} />
-                </div>
-
-                <p style={s.resultMeta}>
-                  {formatDate(result.createdAt)} · {formatTime(result.createdAt)}
-                </p>
-              </div>
-            );
-          })
+              );
+            })}
+          </div>
         )}
 
-        <button style={s.bottomBtn} onClick={() => navigate('/assessment')}>
+        <button
+          className="mt-8 w-full block text-center py-4 rounded-xl border-2 border-indigo-100 bg-white/40 text-indigo-700 font-bold hover:bg-white hover:border-indigo-200 transition-all shadow-sm"
+          onClick={() => navigate('/assessment')}
+        >
           ← Take another assessment
         </button>
       </div>
