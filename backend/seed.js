@@ -85,7 +85,6 @@ const RESOURCES = [
   // SLEEP
   { title: 'Sleep hygiene — 15 habits that actually work', description: 'Evidence-based sleep hygiene guide from the Sleep Foundation, written for college students.', type: 'article', category: 'Sleep', tags: ['sleep', 'self-care'], url: 'https://www.sleepfoundation.org/sleep-hygiene' },
   { title: 'NHS — how to fall asleep faster', description: 'Practical NHS advice on sleep restriction therapy, stimulus control and cognitive techniques.', type: 'article', category: 'Sleep', tags: ['sleep'], url: 'https://www.nhs.uk/every-mind-matters/mental-wellbeing-tips/how-to-fall-asleep-faster-and-sleep-better/' },
-  { title: '10-minute body scan for better sleep', description: 'A guided body scan meditation designed to be done lying in bed before sleep.', type: 'video', category: 'Sleep', tags: ['sleep', 'mindfulness'], url: 'https://www.youtube.com/watch?v=ihwcMDMEVyQ' },
   { title: "Calm — sleep stories (free content)", description: "A selection of Calm's sleep stories — narrated audio designed to ease you into sleep.", type: 'audio', category: 'Sleep', tags: ['sleep', 'mindfulness'], url: 'https://www.calm.com/sleep' },
 
   // STRESS
