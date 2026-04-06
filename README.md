@@ -72,10 +72,11 @@ mongod
 # Start MongoDB service from Services panel or use MongoDB Compass
 ```
 
-6. **Seed the database** (creates default college and admin user):
+6. **Seed the database**:
 ```bash
-npm run seed
+node seed.js
 ```
+*Note: This single script creates the default college, default admin user, generates the clinical questionnaires, and seeds 35 expertly curated mental health resources tagged for the AI hub.*
 
 **Default Admin Credentials:**
 - Email: `admin@default.com`
@@ -120,15 +121,17 @@ The frontend will run on `http://localhost:5173`
 
 ## 🗄️ Database Setup
 
-The database is automatically seeded when you run `npm run seed`. This creates:
+The database is automatically provisioned and securely populated when you run `node seed.js`. This creates:
 - A default college (code: DEFAULT)
 - A default admin user (email: admin@default.com, password: admin123)
+- GAD-7 and PHQ-9 Mental Health Questionnaires
+- 35 Highly Curated clinical articles, videos, and crisis lines tagged for AI integration.
 
 **No manual database editing required!**
 
 ### First-User Auto Admin Logic
 
-If you don't run the seed script, the first user to register will automatically become an admin. This ensures the platform always has at least one admin user.
+If you do not run the seed script, the first user to register will automatically become an admin. However, failing to run the seed script means you will not have any clinical resources or assessments available. It is highly recommended to run `node seed.js`.
 
 ### Creating Additional Colleges
 
@@ -347,7 +350,7 @@ To test the platform:
 4. **Seed database:**
    ```bash
    cd backend
-   npm run seed
+   node seed.js
    ```
 
 5. **Start backend:**

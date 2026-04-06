@@ -68,6 +68,17 @@ export default function ResultsHistory() {
       .finally(() => setLoading(false));
   }, []);
 
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this result?")) return;
+    try {
+      await assessmentAPI.deleteResult(id);
+      setResults(prev => prev.filter((r) => r._id !== id));
+    } catch (err) {
+      console.error(err);
+      alert(`Failed to delete result: ${err.response?.data?.message || err.message}`);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center">
@@ -150,10 +161,16 @@ export default function ResultsHistory() {
               return (
                 <div key={result._id} className="bg-white/70 backdrop-blur-xl border border-white/50 shadow-md hover:shadow-lg transition-shadow rounded-3xl p-6 sm:p-8 flex flex-col">
                   <div className="flex justify-between items-start mb-6">
-                    <div>
-                      <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${badgeClasses}`}>
+                    <div className="flex flex-col gap-2">
+                      <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border self-start ${badgeClasses}`}>
                         {typeLabel(result.questionnaireType)}
                       </span>
+                      <button 
+                        onClick={() => handleDelete(result._id)}
+                        className="text-xs text-red-500 hover:text-red-700 self-start font-semibold transition-colors hover:bg-red-50 px-2 py-1 rounded-md"
+                      >
+                        🗑️ Delete
+                      </button>
                     </div>
                     <div className="text-right">
                       <span className="text-4xl font-extrabold text-gray-900 leading-none">{result.totalScore}</span>
