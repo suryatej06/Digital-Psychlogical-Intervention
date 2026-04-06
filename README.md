@@ -8,7 +8,7 @@ A production-ready multi-tenant Mental Health Support Platform built with the ME
 - **Multi-Tenant Architecture**: College-based data isolation
 - **Role-Based Access Control**: Student, Counselor, and Admin roles
 - **Authentication**: JWT-based secure authentication
-- **Mental Health Screenings**: Validated PHQ-9 and GAD-7 assessments (Phase 4)
+- **Mental Health Screenings**: Validated PHQ-9 and GAD-7 assessments 
 - **Resources Library**: Audio, video, and article resources
 - **Community Forum**: Anonymous posting and commenting
 - **AI Chatbot**: OpenAI-powered mental health support with risk detection
