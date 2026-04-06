@@ -106,5 +106,6 @@ export const assessmentAPI = {
   fetchQuestionnaire: (type) => api.get(`/assessments/${type}`),
   submitResult: (payload) => api.post('/assessments/results', payload),
   getMyResults: () => api.get('/assessments/results'),
+  deleteResult: (id) => api.delete(`/assessments/results/${id}`),
 };
 export default api;

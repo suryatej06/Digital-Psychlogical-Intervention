@@ -47,9 +47,9 @@ sudo systemctl start mongod
 ### 4️⃣ Seed Database
 ```bash
 cd backend
-npm run seed    # creates default college + admin user
-node seed.js    # seeds PHQ-9 assessment data
+node seed.js  
 ```
+*Note: This single script creates the default college, default admin user, generates the PHQ-9 and GAD-7 questionnaires, cleans out outdated data, and seeds the 34 smart psychological resources.*
 
 **Default admin credentials:**
 - Email: `admin@default.com`
@@ -89,6 +89,7 @@ http://localhost:5173
 - [ ] Can log in with admin credentials
 - [ ] Health check: http://localhost:5000/api/health
 - [ ] Assessment loads at http://localhost:5173/assessment (log in as student first)
+- [ ] Resources feed renders at `/resources`
 
 ---
 
@@ -98,6 +99,7 @@ http://localhost:5173
 |---------|-----|
 | MongoDB connection error | Ensure MongoDB is running, check `MONGODB_URI` |
 | Port already in use | Change `PORT` in backend `.env` |
+| Resources show empty tags | Make sure you ran `node seed.js` completely. |
 | Seeding fails | Check MongoDB connection, drop DB if conflicting data |
 | Frontend can't reach backend | Check `VITE_API_URL`, verify backend is running |
 

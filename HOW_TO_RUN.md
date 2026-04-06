@@ -41,7 +41,7 @@ PORT=5000
 NODE_ENV=development
 MONGODB_URI=mongodb://localhost:27017/mental-health-platform
 JWT_SECRET=any-random-string-for-development
-OPENAI_API_KEY=optional
+OPENAI_API_KEY=your-openai-api-key-optional
 FRONTEND_URL=http://localhost:5173
 ```
 
@@ -49,17 +49,19 @@ FRONTEND_URL=http://localhost:5173
 
 ## Step 3: Seed the Database
 
-Run both seed commands — the first creates the default college and admin user, the second loads the PHQ-9 assessment data:
+Run the single unified seed command — this establishes a pristine database state containing the default college Admin user, GAD-7 / PHQ-9 analytical structures, and precisely maps 34 tagged psychological resources to the database.
+
 ```bash
 cd backend
-npm run seed
 node seed.js
 ```
 
-Expected output from `node seed.js`:
+Expected output:
 ```
-✅ Connected to MongoDB
-✅ PHQ-9 seeded successfully
+✅ Database connected and cleared
+✅ Default admin created
+✅ Assessments created (PHQ-9, GAD-7)
+✅ Priority Resources successfully populated (34 count)
 ```
 
 ---
@@ -119,13 +121,13 @@ Login as admin:
 
 ---
 
-## Step 8: Test the Assessment Feature
+## Step 8: Test the AI Assessment Features
 
 1. Register or log in as a **student** account
 2. Click **Assessment** in the navbar
-3. Complete the PHQ-9 quiz
-4. Verify your score and severity label appear on the results screen
-5. Check MongoDB — a `UserResult` document should be saved with your `userId` and `collegeId`
+3. Complete the PHQ-9 or GAD-7 screening
+4. Navigate over to the **Resources** hub
+5. The resource grid will automatically bump articles tagged with your highest screening severities straight to the top labeled as "Recommended".
 
 ---
 
@@ -136,7 +138,7 @@ Login as admin:
 3. `cd backend && npm run dev`
 4. `cd frontend && npm run dev`
 
-You do **not** need to re-run the seed commands unless you drop the database.
+You do **not** need to re-run the `seed.js` script unless you intentionally uninstalled/dropped your database arrays and need to refresh everything back to defaults.
 
 ---
 
@@ -149,4 +151,5 @@ You do **not** need to re-run the seed commands unless you drop the database.
 | Module not found | Run `npm install` again |
 | Network Error in frontend | Check `VITE_API_URL`, verify backend is running |
 | 401 Unauthorized | Token expired — logout and login again |
-| Assessment not loading | Run `node seed.js` to ensure PHQ-9 data exists |
+| Assessment not loading | Run `node seed.js` to ensure PHQ-9 / GAD-7 structural data exists |
+| AI Tip isn't personalized | Ensure `OPENAI_API_KEY` is present in backend `.env` |

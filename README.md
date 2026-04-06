@@ -76,7 +76,7 @@ mongod
 ```bash
 node seed.js
 ```
-*Note: This single script creates the default college, default admin user, generates the clinical questionnaires, and seeds 30 curated mental health resources tagged for the AI hub.*
+*Note: This single script creates the default college, default admin user, generates the clinical questionnaires, and seeds 35 expertly curated mental health resources tagged for the AI hub.*
 
 **Default Admin Credentials:**
 - Email: `admin@default.com`
@@ -125,7 +125,7 @@ The database is automatically provisioned and securely populated when you run `n
 - A default college (code: DEFAULT)
 - A default admin user (email: admin@default.com, password: admin123)
 - GAD-7 and PHQ-9 Mental Health Questionnaires
-- 30 Highly Curated clinical articles, videos, and crisis lines tagged for AI integration.
+- 35 Highly Curated clinical articles, videos, and crisis lines tagged for AI integration.
 
 **No manual database editing required!**
 

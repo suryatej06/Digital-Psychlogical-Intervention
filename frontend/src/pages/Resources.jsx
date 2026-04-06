@@ -102,7 +102,9 @@ function BreathingExercise() {
 // ─── Resource card ─────────────────────────────────────────────────────────────
 function ResourceCard({ resource }) {
   const meta = TYPE_META[resource.type] || TYPE_META.article;
-  const isRecommended = resource._score > 0;
+  // Make the badge highly selective: requires at least 2 matching tags 
+  // so it doesn't just recommend everything loosely related
+  const isRecommended = resource._score >= 2;
 
   return (
     <div className="group bg-white/60 backdrop-blur-xl border border-white/50 rounded-3xl shadow-lg overflow-hidden flex flex-col transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 relative">
@@ -186,7 +188,7 @@ export default function Resources() {
     try {
       setTipLoading(true);
       const res = await api.get('/resources/tip');
-      setTip(res.data?.tip ?? null);
+      setTip(res.tip ?? res.data?.tip ?? null);
     } catch {
       setTip(null);
     } finally {

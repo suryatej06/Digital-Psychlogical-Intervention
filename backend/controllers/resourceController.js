@@ -34,7 +34,11 @@ async function getPriorityTags(userId) {
     }
     const tags = new Set();
     for (const [type, result] of Object.entries(latest)) {
-      const severity = result.severityTag || result.severity || result.severityLevel;
+      let severity = result.severityTag || result.severity || result.severityLevel;
+      if (severity) {
+        severity = severity.replace(/ depression| anxiety/i, '').trim();
+        severity = severity.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+      }
       const map = SEVERITY_TAG_MAP[type];
       if (map && severity && map[severity]) map[severity].forEach(t => tags.add(t));
     }
@@ -81,11 +85,16 @@ export const getResourceTip = async (req, res) => {
       const key = r.questionnaireType?.toLowerCase();
       if (key && !latest[key]) latest[key] = r;
     }
-    const scores = Object.entries(latest).map(([type, r]) => ({
-      type: type.toUpperCase(),
-      severity: r.severityTag || r.severity || r.severityLevel || 'Unknown',
-      score: r.totalScore ?? r.score ?? null,
-    }));
+    const scores = Object.entries(latest).map(([type, r]) => {
+      let rawSeverity = r.severityTag || r.severity || r.severityLevel || 'Unknown';
+      let cleanSeverity = rawSeverity.replace(/ depression| anxiety/i, '').trim();
+      cleanSeverity = cleanSeverity.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+      return {
+        type: type.toUpperCase(),
+        severity: cleanSeverity,
+        score: r.totalScore ?? r.score ?? null,
+      };
+    });
 
     const tip = await generateResourceTip(scores);
     res.json({ success: true, tip });
