@@ -14,7 +14,7 @@ A production-ready multi-tenant Mental Health Support Platform built with the ME
 - **AI Chatbot**: OpenAI-powered mental health support with risk detection
 - **Counseling Booking**: Schedule and manage counseling sessions
 - **Admin Dashboard**: Manage users, resources, and flagged content
-- **Stability & Polish**: React Error Boundaries, Disclaimer Consent Modals, Mobile-responsive UI (Phase 5)
+- **Stability & Polish**: React Error Boundaries, Disclaimer Consent Modals, Mobile-responsive UI 
 
 ### Security Features
 - Password hashing with bcrypt
@@ -146,6 +146,7 @@ mental-health-platform/
 │   │   └── database.js
 │   ├── controllers/
 │   │   ├── adminController.js
+│   │   ├── assessmentController.js
 │   │   ├── authController.js
 │   │   ├── bookingController.js
 │   │   ├── chatController.js
@@ -164,11 +165,14 @@ mental-health-platform/
 │   │   ├── Comment.js
 │   │   ├── Message.js
 │   │   ├── Post.js
+│   │   ├── Questionnaire.js
 │   │   ├── Report.js
 │   │   ├── Resource.js
-│   │   └── User.js
+│   │   ├── User.js
+│   │   └── UserResult.js
 │   ├── routes/
 │   │   ├── admin.js
+│   │   ├── assessments.js
 │   │   ├── auth.js
 │   │   ├── bookings.js
 │   │   ├── chat.js
@@ -184,12 +188,16 @@ mental-health-platform/
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
+│   │   │   ├── DisclaimerModal.jsx
+│   │   │   ├── ErrorBoundary.jsx
 │   │   │   ├── Navbar.jsx
 │   │   │   └── ProtectedRoute.jsx
 │   │   ├── context/
 │   │   │   └── AuthContext.jsx
 │   │   ├── pages/
 │   │   │   ├── AdminPanel.jsx
+│   │   │   ├── Assessment.jsx
+│   │   │   ├── AssessmentHome.jsx
 │   │   │   ├── Bookings.jsx
 │   │   │   ├── Chatbot.jsx
 │   │   │   ├── Community.jsx
@@ -197,7 +205,8 @@ mental-health-platform/
 │   │   │   ├── Landing.jsx
 │   │   │   ├── Login.jsx
 │   │   │   ├── Register.jsx
-│   │   │   └── Resources.jsx
+│   │   │   ├── Resources.jsx
+│   │   │   └── ResultsHistory.jsx
 │   │   ├── services/
 │   │   │   └── api.js
 │   │   ├── App.jsx
