@@ -157,3 +157,39 @@ export const getDashboardStats = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * Dismiss flag on a post (Admin only)
+ */
+export const dismissFlaggedPost = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const post = await Post.findOneAndUpdate(
+      { _id: id, collegeId: req.user.collegeId },
+      { isFlagged: false, flagReason: null },
+      { new: true }
+    );
+    if (!post) return res.status(404).json({ message: 'Post not found' });
+    res.json({ message: 'Post flag dismissed', post });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Resolve a flagged chat session (Admin only)
+ */
+export const resolveFlaggedSession = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const session = await ChatSession.findOneAndUpdate(
+      { _id: id, collegeId: req.user.collegeId },
+      { isFlagged: false, flagReason: 'Resolved by admin' },
+      { new: true }
+    );
+    if (!session) return res.status(404).json({ message: 'Session not found' });
+    res.json({ message: 'Chat session marked as resolved', session });
+  } catch (error) {
+    next(error);
+  }
+};

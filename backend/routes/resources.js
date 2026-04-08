@@ -22,9 +22,9 @@ router.get('/', getResources);     // supports ?ranked=true&category=X&type=Y
 router.get('/tip', getResourceTip);   // personalised AI tip
 router.get('/:id', getResourceById);
 
-// Admin only
-router.post('/', roleCheck(['admin']), createResource);
-router.put('/:id', roleCheck(['admin']), updateResource);
-router.delete('/:id', roleCheck(['admin']), deleteResource);
+// Admin and Counselor via shared UI
+router.post('/', roleCheck(['admin', 'counselor']), createResource);
+router.put('/:id', roleCheck(['admin', 'counselor']), updateResource);
+router.delete('/:id', roleCheck(['admin', 'counselor']), deleteResource);
 
 export default router;

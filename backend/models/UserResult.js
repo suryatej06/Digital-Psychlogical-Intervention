@@ -15,6 +15,11 @@ const userResultSchema = new mongoose.Schema(
     questionnaireType: { type: String, required: true },
     totalScore:        { type: Number, required: true },
     severityTag:       { type: String, required: true },
+    // New: store individual sub-scores from the unified flow
+    phq9Score:  { type: Number },
+    gad7Score:  { type: Number },
+    pssScore:   { type: Number },
+    promisScore: { type: Number },
   },
   { timestamps: true }
 );

@@ -38,6 +38,14 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  hasCompletedOnboarding: {
+    type: Boolean,
+    default: false
+  },
+  needsIntervention: {
+    type: Boolean,
+    default: false
+  },
   profile: {
     phone: String,
     bio: String,

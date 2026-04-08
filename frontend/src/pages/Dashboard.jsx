@@ -37,12 +37,12 @@ const SEVERITY_COLOR = {
 // ── Nav cards — same tall style as the original ────────────────────────────────
 
 const STUDENT_CARDS = [
-  { to: '/assessment', icon: '🧠', title: 'Screenings', desc: 'Take PHQ-9 or GAD-7 assessments', color: 'from-indigo-400 to-purple-500' },
+  { to: '/check-in', icon: '🩺', title: 'Check-In', desc: 'Quick wellbeing check — mood, sleep & stress', color: 'from-indigo-400 to-purple-500' },
   { to: '/resources', icon: '📚', title: 'Resources', desc: 'Personalised articles & exercises', color: 'from-purple-400 to-pink-500' },
   { to: '/community', icon: '👥', title: 'Community', desc: 'Connect with peers anonymously', color: 'from-pink-400 to-rose-500' },
   { to: '/chatbot', icon: '💬', title: 'AI support', desc: 'Chat with your 24/7 assistant', color: 'from-indigo-400 to-blue-500' },
   { to: '/bookings', icon: '🗓️', title: 'Bookings', desc: 'Schedule a counselling session', color: 'from-violet-400 to-indigo-500' },
-  { to: '/results', icon: '📈', title: 'My results', desc: 'View your assessment history', color: 'from-teal-400 to-indigo-400' },
+  { to: '/progress', icon: '📈', title: 'My Progress', desc: 'Track your wellbeing over time', color: 'from-teal-400 to-indigo-400' },
 ];
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -61,8 +61,7 @@ export default function Dashboard() {
       .finally(() => setLoadingRes(false));
   }, [user]);
 
-  const latestPhq9 = results.find(r => r.questionnaireType === 'phq9') ?? null;
-  const latestGad7 = results.find(r => r.questionnaireType === 'gad7') ?? null;
+  const latestFlow = results.find(r => r.questionnaireType === 'wellbeing-flow' || r.questionnaireType === 'phq9' || r.questionnaireType === 'gad7') ?? null;
   const latestAny = results[0] ?? null;
   const daysSinceCheck = latestAny ? daysSince(latestAny.createdAt) : null;
   const showNudge = !loadingRes && (daysSinceCheck === null || daysSinceCheck >= 7);
@@ -109,7 +108,7 @@ export default function Dashboard() {
                   </p>
                 </div>
                 <Link
-                  to="/assessment"
+                  to="/check-in"
                   className="flex-shrink-0 px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold shadow-md hover:bg-indigo-700 hover:-translate-y-0.5 transition-all duration-200 whitespace-nowrap"
                 >
                   {daysSinceCheck === null ? 'Start →' : 'Take it →'}
@@ -127,34 +126,30 @@ export default function Dashboard() {
                   <p className="text-xs text-gray-400 font-medium mt-1">Screenings taken</p>
                 </div>
 
-                <div className="bg-white/60 backdrop-blur-xl border border-white/50 rounded-2xl p-4 text-center shadow-sm flex flex-col items-center justify-center">
-                  {latestPhq9 ? (
+                <div className="bg-white/60 backdrop-blur-xl border border-white/50 rounded-2xl p-4 text-center shadow-sm flex flex-col items-center justify-center mt-0">
+                  {latestFlow ? (
                     <>
-                      <span className={`text-xs font-bold px-3 py-1 rounded-full ${SEVERITY_COLOR[latestPhq9.severityTag] ?? 'text-gray-700 bg-gray-100'}`}>
-                        {latestPhq9.severityTag?.replace(' depression', '') ?? '—'}
-                      </span>
-                      <p className="text-xs text-gray-400 font-medium mt-2">Latest PHQ-9</p>
+                      <p className="text-3xl font-extrabold text-indigo-600">{latestFlow.phq9Score ?? latestFlow.totalScore ?? '—'}</p>
+                      <p className="text-xs text-gray-400 font-medium mt-1">Latest Mood Score</p>
                     </>
                   ) : (
                     <>
                       <p className="text-3xl font-extrabold text-gray-200">—</p>
-                      <p className="text-xs text-gray-400 font-medium mt-1">No PHQ-9 yet</p>
+                      <p className="text-xs text-gray-400 font-medium mt-1">No check-in yet</p>
                     </>
                   )}
                 </div>
 
-                <div className="bg-white/60 backdrop-blur-xl border border-white/50 rounded-2xl p-4 text-center shadow-sm flex flex-col items-center justify-center">
-                  {latestGad7 ? (
+                <div className="bg-white/60 backdrop-blur-xl border border-white/50 rounded-2xl p-4 text-center shadow-sm flex flex-col items-center justify-center mt-0">
+                  {latestFlow ? (
                     <>
-                      <span className={`text-xs font-bold px-3 py-1 rounded-full ${SEVERITY_COLOR[latestGad7.severityTag] ?? 'text-gray-700 bg-gray-100'}`}>
-                        {latestGad7.severityTag?.replace(' anxiety', '') ?? '—'}
-                      </span>
-                      <p className="text-xs text-gray-400 font-medium mt-2">Latest GAD-7</p>
+                      <p className="text-3xl font-extrabold text-purple-600">{latestFlow.gad7Score ?? '—'}</p>
+                      <p className="text-xs text-gray-400 font-medium mt-1">Latest Stress Score</p>
                     </>
                   ) : (
                     <>
                       <p className="text-3xl font-extrabold text-gray-200">—</p>
-                      <p className="text-xs text-gray-400 font-medium mt-1">No GAD-7 yet</p>
+                      <p className="text-xs text-gray-400 font-medium mt-1">No check-in yet</p>
                     </>
                   )}
                 </div>
@@ -187,20 +182,38 @@ export default function Dashboard() {
 
         {/* ══ COUNSELOR VIEW ════════════════════════════════════════════════ */}
         {user?.role === 'counselor' && (
-          <div className="bg-white/60 backdrop-blur-xl border border-white/50 rounded-3xl p-8 shadow-xl">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-400 to-indigo-500 flex items-center justify-center text-2xl mb-6 shadow-md">
-              🗓️
+          <div className="grid sm:grid-cols-2 gap-6">
+            <div className="bg-white/60 backdrop-blur-xl border border-white/50 rounded-3xl p-8 shadow-xl flex flex-col items-start">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-400 to-indigo-500 flex items-center justify-center text-2xl mb-6 shadow-md">
+                🗓️
+              </div>
+              <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Bookings & Schedule</h2>
+              <p className="text-gray-500 text-sm leading-relaxed mb-8 max-w-sm flex-1">
+                Review incoming booking requests, set your availability, and manage your upcoming sessions.
+              </p>
+              <Link
+                to="/bookings"
+                className="inline-block px-8 py-3 rounded-2xl bg-indigo-600 text-white font-bold shadow-md hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+              >
+                View my bookings →
+              </Link>
             </div>
-            <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Counselor dashboard</h2>
-            <p className="text-gray-500 text-sm leading-relaxed mb-8 max-w-md">
-              Review incoming booking requests, set your availability, and manage your upcoming sessions.
-            </p>
-            <Link
-              to="/bookings"
-              className="inline-block px-8 py-3 rounded-2xl bg-indigo-600 text-white font-bold shadow-md hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
-            >
-              View my bookings →
-            </Link>
+
+            <div className="bg-white/60 backdrop-blur-xl border border-white/50 rounded-3xl p-8 shadow-xl flex flex-col items-start">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-2xl mb-6 shadow-md">
+                📚
+              </div>
+              <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Resource Management</h2>
+              <p className="text-gray-500 text-sm leading-relaxed mb-8 max-w-sm flex-1">
+                Upload new articles, videos, and exercises to the Smart Resource Hub for students to read.
+              </p>
+              <Link
+                to="/manage-resources"
+                className="inline-block px-8 py-3 rounded-2xl bg-white/60 backdrop-blur-xl border border-white/50 text-indigo-700 font-bold shadow-sm hover:bg-white hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+              >
+                Manage resources →
+              </Link>
+            </div>
           </div>
         )}
 

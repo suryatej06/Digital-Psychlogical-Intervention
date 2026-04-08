@@ -4,7 +4,9 @@ import {
   updateUserStatus,
   getFlaggedPosts,
   getFlaggedChatSessions,
-  getDashboardStats
+  getDashboardStats,
+  dismissFlaggedPost,
+  resolveFlaggedSession
 } from '../controllers/adminController.js';
 import { authenticate } from '../middleware/auth.js';
 import { enforceCollegeAccess } from '../middleware/auth.js';
@@ -20,7 +22,9 @@ router.use(roleCheck(['admin']));
 router.get('/users', getAllUsers);
 router.put('/users/:userId/status', updateUserStatus);
 router.get('/posts/flagged', getFlaggedPosts);
+router.put('/posts/:id/dismiss', dismissFlaggedPost);
 router.get('/chat/flagged', getFlaggedChatSessions);
+router.put('/chat/:id/resolve', resolveFlaggedSession);
 router.get('/stats', getDashboardStats);
 
 export default router;

@@ -18,9 +18,9 @@ const Login = () => {
     setLoading(true);
     const result = await login(formData.email, formData.password);
     if (result.success) {
-      const role = result.user?.role;
+      const { role, hasCompletedOnboarding } = result.user;
       if (role === 'admin') navigate('/admin');
-      else if (role === 'counselor') navigate('/bookings');
+      else if (role === 'student' && !hasCompletedOnboarding) navigate('/onboarding');
       else navigate('/dashboard');
     } else {
       setError(result.message || 'Login failed');
@@ -51,7 +51,6 @@ const Login = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-bold text-gray-700 mb-1.5">
                 Email address
@@ -68,7 +67,6 @@ const Login = () => {
               />
             </div>
 
-            {/* Password */}
             <div>
               <label htmlFor="password" className="block text-sm font-bold text-gray-700 mb-1.5">
                 Password
@@ -85,20 +83,18 @@ const Login = () => {
               />
             </div>
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
               className={`w-full py-3.5 rounded-2xl font-bold text-base shadow-md transition-all duration-200 ${loading
-                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5 cursor-pointer'
-                }`}
+                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5 cursor-pointer'
+              }`}
             >
               {loading ? 'Signing in…' : 'Sign in →'}
             </button>
           </form>
 
-          {/* Divider */}
           <div className="flex items-center gap-3 my-6">
             <div className="flex-1 h-px bg-gray-200" />
             <span className="text-xs text-gray-400 font-medium">or</span>
@@ -113,7 +109,6 @@ const Login = () => {
           </p>
         </div>
 
-        {/* Footer note */}
         <p className="text-center text-xs text-gray-400 mt-6 leading-relaxed">
           This platform is not a substitute for professional mental health care.
         </p>
