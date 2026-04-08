@@ -43,12 +43,12 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authAPI.login({ email, password });
       const { token: newToken, user: userData } = response;
-      
+
       setToken(newToken);
       setUser(userData);
       localStorage.setItem('token', newToken);
       localStorage.setItem('user', JSON.stringify(userData));
-      
+
       return { success: true, user: userData };
     } catch (error) {
       return {
@@ -62,12 +62,12 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authAPI.register(userData);
       const { token: newToken, user: newUser } = response;
-      
+
       setToken(newToken);
       setUser(newUser);
       localStorage.setItem('token', newToken);
       localStorage.setItem('user', JSON.stringify(newUser));
-      
+
       return { success: true, user: newUser };
     } catch (error) {
       return {
@@ -84,8 +84,15 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('user');
   };
 
+  // Exposed so Onboarding can update user after completing flow
+  const updateUser = (updatedUser) => {
+    setUser(updatedUser);
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+  };
+
   const value = {
     user,
+    setUser: updateUser,
     token,
     loading,
     login,

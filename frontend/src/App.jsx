@@ -8,14 +8,15 @@ import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
-import Assessment from './pages/Assessment';
-import AssessmentHome from './pages/AssessmentHome';
-import ResultsHistory from './pages/ResultsHistory';
+import Onboarding from './pages/Onboarding';
+import CheckIn from './pages/CheckIn';
+import Progress from './pages/Progress';
 import Resources from './pages/Resources';
 import Community from './pages/Community';
 import Chatbot from './pages/Chatbot';
 import Bookings from './pages/Bookings';
 import AdminPanel from './pages/AdminPanel';
+import ManageResources from './components/ManageResources';
 
 export default function App() {
   return (
@@ -24,91 +25,105 @@ export default function App() {
         <Navbar />
         <ErrorBoundary>
           <Routes>
-          {/* Public routes */}
-          <Route path="/" element={<Landing />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+            {/* Public routes */}
+            <Route path="/" element={<Landing />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
 
-          {/* Student + Counselor shared routes */}
-          <Route
-            path="/bookings"
-            element={
-              <ProtectedRoute allowedRoles={['student', 'counselor']}>
-                <Bookings />
-              </ProtectedRoute>
-            }
-          />
+            {/* Onboarding — students only, no onboarding gate applied here */}
+            <Route
+              path="/onboarding"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <Onboarding />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Student-only routes */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute allowedRoles={['student']}>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/assessment"
-            element={
-              <ProtectedRoute allowedRoles={['student']}>
-                <AssessmentHome />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/assessment/:type"
-            element={
-              <ProtectedRoute allowedRoles={['student']}>
-                <Assessment />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/results"
-            element={
-              <ProtectedRoute allowedRoles={['student']}>
-                <ResultsHistory />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/resources"
-            element={
-              <ProtectedRoute allowedRoles={['student']}>
-                <Resources />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/community"
-            element={
-              <ProtectedRoute allowedRoles={['student']}>
-                <Community />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/chatbot"
-            element={
-              <ProtectedRoute allowedRoles={['student']}>
-                <Chatbot />
-              </ProtectedRoute>
-            }
-          />
+            {/* Student + Counselor shared */}
+            <Route
+              path="/bookings"
+              element={
+                <ProtectedRoute allowedRoles={['student', 'counselor']}>
+                  <Bookings />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Admin routes */}
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AdminPanel />
-              </ProtectedRoute>
-            }
-          />
+            {/* Student + Counselor dashboard */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['student', 'counselor']}>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+            {/* Student-only routes */}
+            <Route
+              path="/check-in"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <CheckIn />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/progress"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <Progress />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/resources"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <Resources />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/community"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <Community />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/chatbot"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <Chatbot />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Admin routes */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminPanel />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/manage-resources"
+              element={
+                <ProtectedRoute allowedRoles={['admin', 'counselor']}>
+                  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <ManageResources />
+                  </div>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </ErrorBoundary>
       </Router>

@@ -74,7 +74,8 @@ export const register = async (req, res, next) => {
         email: user.email,
         role: user.role,
         collegeId: user.collegeId,
-        alias: user.alias
+        alias: user.alias,
+        hasCompletedOnboarding: user.hasCompletedOnboarding
       }
     });
   } catch (error) {
@@ -118,7 +119,8 @@ export const login = async (req, res, next) => {
         role: user.role,
         collegeId: user.collegeId,
         alias: user.alias,
-        college: user.collegeId
+        college: user.collegeId,
+        hasCompletedOnboarding: user.hasCompletedOnboarding
       }
     });
   } catch (error) {

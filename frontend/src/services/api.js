@@ -66,7 +66,8 @@ export const postsAPI = {
   create: (data) => api.post('/posts', data),
   toggleLike: (id) => api.post(`/posts/${id}/like`),
   report: (id, reason) => api.post(`/posts/${id}/report`, { reason }),
-  delete: (id) => api.delete(`/posts/${id}`)
+  delete: (id) => api.delete(`/posts/${id}`),
+  addComment: (id, content) => api.post(`/posts/${id}/comments`, { content })
 };
 
 // Comments API
@@ -98,12 +99,15 @@ export const adminAPI = {
   getAllUsers: (role) => api.get('/admin/users', { params: { role } }),
   updateUserStatus: (userId, isActive) => api.put(`/admin/users/${userId}/status`, { isActive }),
   getFlaggedPosts: () => api.get('/admin/posts/flagged'),
+  dismissFlaggedPost: (id) => api.put(`/admin/posts/${id}/dismiss`),
   getFlaggedChatSessions: () => api.get('/admin/chat/flagged'),
+  resolveChatSession: (id) => api.put(`/admin/chat/${id}/resolve`),
   getDashboardStats: () => api.get('/admin/stats')
 };
-// Assessment API
+// Assessment / Check-In API
 export const assessmentAPI = {
-  fetchQuestionnaire: (type) => api.get(`/assessments/${type}`),
+  submitFlow: (answers, isOnboarding = false) =>
+    api.post('/assessments/submit-flow', { answers, isOnboarding }),
   submitResult: (payload) => api.post('/assessments/results', payload),
   getMyResults: () => api.get('/assessments/results'),
   deleteResult: (id) => api.delete(`/assessments/results/${id}`),

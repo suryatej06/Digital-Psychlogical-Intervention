@@ -34,6 +34,9 @@ export default function Navbar() {
             {/* Student nav */}
             {user?.role === 'student' && (
               <>
+                <Link to="/dashboard" className="hover:text-indigo-200 transition-colors">
+                  Home
+                </Link>
                 <Link to="/resources" className="hover:text-indigo-200 transition-colors">
                   Resources
                 </Link>
@@ -46,11 +49,11 @@ export default function Navbar() {
                 <Link to="/bookings" className="hover:text-indigo-200 transition-colors">
                   Bookings
                 </Link>
-                <Link to="/assessment" className="hover:text-indigo-200 transition-colors">
-                  Assessment
+                <Link to="/check-in" className="hover:text-indigo-200 transition-colors">
+                  Check-In
                 </Link>
-                <Link to="/results" className="hover:text-indigo-200 transition-colors">
-                  History
+                <Link to="/progress" className="hover:text-indigo-200 transition-colors">
+                  My Progress
                 </Link>
               </>
             )}
@@ -58,17 +61,28 @@ export default function Navbar() {
             {/* Counselor nav */}
             {user?.role === 'counselor' && (
               <>
+                <Link to="/dashboard" className="hover:text-indigo-200 transition-colors">
+                  Dashboard
+                </Link>
                 <Link to="/bookings" className="hover:text-indigo-200 transition-colors">
                   My Sessions
+                </Link>
+                <Link to="/manage-resources" className="hover:text-indigo-200 transition-colors">
+                  Manage Resources
                 </Link>
               </>
             )}
 
             {/* Admin nav */}
             {user?.role === 'admin' && (
-              <Link to="/admin" className="hover:text-indigo-200 transition-colors">
-                Admin Panel
-              </Link>
+              <>
+                <Link to="/admin" className="hover:text-indigo-200 transition-colors">
+                  Admin Panel
+                </Link>
+                <Link to="/manage-resources" className="hover:text-indigo-200 transition-colors">
+                  Manage Resources
+                </Link>
+              </>
             )}
 
             <button

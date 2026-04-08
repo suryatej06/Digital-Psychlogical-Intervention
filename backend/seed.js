@@ -1,11 +1,10 @@
 // backend/seed.js  — full replacement
 // Run: node seed.js  (from the backend directory)
-// Handles: default college, admin user, PHQ-9/GAD-7 questionnaires, 35 resources
+// Handles: default college, admin user, 35 resources
 
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
-import Questionnaire from './models/Questionnaire.js';
 
 dotenv.config();
 
@@ -19,6 +18,7 @@ const User = mongoose.models.User || mongoose.model('User', new mongoose.Schema(
   role: { type: String, default: 'student' },
   collegeId: mongoose.Schema.Types.ObjectId,
   isActive: { type: Boolean, default: true },
+  hasCompletedOnboarding: { type: Boolean, default: false },
 }));
 
 const Resource = mongoose.models.Resource || mongoose.model('Resource', new mongoose.Schema({
@@ -30,38 +30,6 @@ const Resource = mongoose.models.Resource || mongoose.model('Resource', new mong
   isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now },
 }));
-
-// ─── PHQ-9 ────────────────────────────────────────────────────────────────────
-const phq9 = {
-  type: 'phq9',
-  title: 'PHQ-9 Depression Screening',
-  questions: [
-    { text: 'Little interest or pleasure in doing things', answers: [{ text: 'Not at all', score: 0 }, { text: 'Several days', score: 1 }, { text: 'More than half the days', score: 2 }, { text: 'Nearly every day', score: 3 }] },
-    { text: 'Feeling down, depressed, or hopeless', answers: [{ text: 'Not at all', score: 0 }, { text: 'Several days', score: 1 }, { text: 'More than half the days', score: 2 }, { text: 'Nearly every day', score: 3 }] },
-    { text: 'Trouble falling or staying asleep, or sleeping too much', answers: [{ text: 'Not at all', score: 0 }, { text: 'Several days', score: 1 }, { text: 'More than half the days', score: 2 }, { text: 'Nearly every day', score: 3 }] },
-    { text: 'Feeling tired or having little energy', answers: [{ text: 'Not at all', score: 0 }, { text: 'Several days', score: 1 }, { text: 'More than half the days', score: 2 }, { text: 'Nearly every day', score: 3 }] },
-    { text: 'Poor appetite or overeating', answers: [{ text: 'Not at all', score: 0 }, { text: 'Several days', score: 1 }, { text: 'More than half the days', score: 2 }, { text: 'Nearly every day', score: 3 }] },
-    { text: 'Feeling bad about yourself — or that you are a failure or have let yourself or your family down', answers: [{ text: 'Not at all', score: 0 }, { text: 'Several days', score: 1 }, { text: 'More than half the days', score: 2 }, { text: 'Nearly every day', score: 3 }] },
-    { text: 'Trouble concentrating on things, such as reading the newspaper or watching television', answers: [{ text: 'Not at all', score: 0 }, { text: 'Several days', score: 1 }, { text: 'More than half the days', score: 2 }, { text: 'Nearly every day', score: 3 }] },
-    { text: 'Moving or speaking so slowly that other people could have noticed? Or the opposite — being so fidgety or restless that you have been moving around a lot more than usual', answers: [{ text: 'Not at all', score: 0 }, { text: 'Several days', score: 1 }, { text: 'More than half the days', score: 2 }, { text: 'Nearly every day', score: 3 }] },
-    { text: 'Thoughts that you would be better off dead or of hurting yourself in some way', answers: [{ text: 'Not at all', score: 0 }, { text: 'Several days', score: 1 }, { text: 'More than half the days', score: 2 }, { text: 'Nearly every day', score: 3 }] },
-  ],
-};
-
-// ─── GAD-7 ────────────────────────────────────────────────────────────────────
-const gad7 = {
-  type: 'gad7',
-  title: 'GAD-7 Anxiety Screening',
-  questions: [
-    { text: 'Feeling nervous, anxious, or on edge', answers: [{ text: 'Not at all', score: 0 }, { text: 'Several days', score: 1 }, { text: 'More than half the days', score: 2 }, { text: 'Nearly every day', score: 3 }] },
-    { text: 'Not being able to stop or control worrying', answers: [{ text: 'Not at all', score: 0 }, { text: 'Several days', score: 1 }, { text: 'More than half the days', score: 2 }, { text: 'Nearly every day', score: 3 }] },
-    { text: 'Worrying too much about different things', answers: [{ text: 'Not at all', score: 0 }, { text: 'Several days', score: 1 }, { text: 'More than half the days', score: 2 }, { text: 'Nearly every day', score: 3 }] },
-    { text: 'Trouble relaxing', answers: [{ text: 'Not at all', score: 0 }, { text: 'Several days', score: 1 }, { text: 'More than half the days', score: 2 }, { text: 'Nearly every day', score: 3 }] },
-    { text: 'Being so restless that it is hard to sit still', answers: [{ text: 'Not at all', score: 0 }, { text: 'Several days', score: 1 }, { text: 'More than half the days', score: 2 }, { text: 'Nearly every day', score: 3 }] },
-    { text: 'Becoming easily annoyed or irritable', answers: [{ text: 'Not at all', score: 0 }, { text: 'Several days', score: 1 }, { text: 'More than half the days', score: 2 }, { text: 'Nearly every day', score: 3 }] },
-    { text: 'Feeling afraid, as if something awful might happen', answers: [{ text: 'Not at all', score: 0 }, { text: 'Several days', score: 1 }, { text: 'More than half the days', score: 2 }, { text: 'Nearly every day', score: 3 }] },
-  ],
-};
 
 // ─── Resources ────────────────────────────────────────────────────────────────
 const RESOURCES = [
@@ -130,18 +98,13 @@ async function seed() {
     const existingAdmin = await User.findOne({ email: 'admin@default.com' });
     if (!existingAdmin) {
       const hashed = await bcrypt.hash('admin123', 12);
-      await User.create({ name: 'Admin', email: 'admin@default.com', password: hashed, role: 'admin', collegeId: college._id });
+      await User.create({ name: 'Admin', email: 'admin@default.com', password: hashed, role: 'admin', collegeId: college._id, hasCompletedOnboarding: true });
       console.log('✓ Created admin  →  admin@default.com / admin123');
     } else {
       console.log('✓ Admin already exists — skipped');
     }
 
-    // 3. Questionnaires
-    await Questionnaire.deleteMany({ type: { $in: ['phq9', 'gad7'] } });
-    await Questionnaire.insertMany([phq9, gad7]);
-    console.log('✓ Seeded PHQ-9 and GAD-7 questionnaires');
-
-    // 4. Resources
+    // 3. Resources
     const deleted = await Resource.deleteMany({ collegeId: college._id });
     console.log(`✓ Cleared ${deleted.deletedCount} existing resources`);
     await Resource.insertMany(RESOURCES.map(r => ({ ...r, collegeId: college._id })));

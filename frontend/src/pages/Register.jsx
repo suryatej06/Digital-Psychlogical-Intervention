@@ -41,9 +41,9 @@ const Register = () => {
     const result = await register(registerData);
 
     if (result.success) {
-      const role = result.user?.role;
+      const { role, hasCompletedOnboarding } = result.user;
       if (role === 'admin') navigate('/admin');
-      else if (role === 'counselor') navigate('/bookings');
+      else if (role === 'student' && !hasCompletedOnboarding) navigate('/onboarding');
       else navigate('/dashboard');
     } else {
       setError(result.message || 'Registration failed');
