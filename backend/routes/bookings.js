@@ -6,7 +6,8 @@ import {
   getStudentBookings,
   getCounselorBookings,
   getCounselors,
-  updateBookingStatus
+  updateBookingStatus,
+  getAvailableSlots
 } from '../controllers/bookingController.js';
 import { authenticate } from '../middleware/auth.js';
 import { enforceCollegeAccess } from '../middleware/auth.js';
@@ -23,9 +24,7 @@ router.use(enforceCollegeAccess);
 router.post('/book',
   roleCheck(['student']),
   [
-    body('counselorId').isMongoId(),
-    body('slotStart').isISO8601().toDate(),
-    body('slotEnd').isISO8601().toDate(),
+    body('bookingId').isMongoId(),
     body('studentNotes').optional().isString().trim()
   ],
   validate,
@@ -33,6 +32,7 @@ router.post('/book',
 );
 router.get('/student', roleCheck(['student']), getStudentBookings);
 router.get('/counselors', roleCheck(['student']), getCounselors);
+router.get('/counselors/:counselorId/availability', roleCheck(['student']), getAvailableSlots);
 
 // Counselor routes
 router.post('/availability',

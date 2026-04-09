@@ -90,6 +90,7 @@ export const bookingsAPI = {
   getStudentBookings: () => api.get('/bookings/student'),
   getCounselorBookings: (status) => api.get('/bookings/counselor', { params: { status } }),
   getCounselors: () => api.get('/bookings/counselors'),
+  getAvailability: (counselorId) => api.get(`/bookings/counselors/${counselorId}/availability`),
   setAvailability: (data) => api.post('/bookings/availability', data),
   updateStatus: (bookingId, data) => api.put(`/bookings/${bookingId}/status`, data)
 };

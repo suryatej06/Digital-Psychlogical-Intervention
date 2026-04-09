@@ -4,7 +4,7 @@ const bookingSchema = new mongoose.Schema({
   studentId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
+    required: false,
     index: true
   },
   counselorId: {
@@ -29,7 +29,7 @@ const bookingSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'approved', 'rejected', 'completed'],
+    enum: ['available', 'pending', 'approved', 'rejected', 'completed'],
     default: 'pending'
   },
   notes: {
