@@ -24,10 +24,10 @@ export const setAvailability = async (req, res, next) => {
       return res.status(400).json({ message: 'Cannot create slots in the past' });
     }
 
-    // Check for conflicts
+    // Check for conflicts with pending/approved/available slots
     const conflict = await Booking.findOne({
       counselorId: req.user.userId,
-      status: { $in: ['pending', 'approved'] },
+      status: { $in: ['available', 'pending', 'approved'] },
       $or: [
         {
           slotStart: { $lt: end },
@@ -37,14 +37,36 @@ export const setAvailability = async (req, res, next) => {
     });
 
     if (conflict) {
-      return res.status(400).json({ message: 'Time slot conflicts with existing booking' });
+      return res.status(400).json({ message: 'Time slot conflicts with an existing booking or availability block.' });
     }
 
-    // Create availability slot (as a pending booking that can be booked)
-    // In a real system, you might want a separate Availability model
-    // For simplicity, we'll create a booking with status 'pending' that students can claim
+    // Create availability slot natively
+    const availability = await Booking.create({
+      counselorId: req.user.userId,
+      collegeId: req.user.collegeId,
+      slotStart: start,
+      slotEnd: end,
+      status: 'available'
+    });
 
-    res.json({ message: 'Availability slot created (students can now book)' });
+    res.status(201).json({ message: 'Availability slot published successfully.', availability });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAvailableSlots = async (req, res, next) => {
+  try {
+    const { counselorId } = req.params;
+    
+    // Optional: add collegeId constraint if students can strictly only see their own counselors
+    const slots = await Booking.find({
+      counselorId,
+      status: 'available',
+      slotStart: { $gt: new Date() } // Only show future slots
+    }).sort({ slotStart: 1 });
+
+    res.json({ slots });
   } catch (error) {
     next(error);
   }
@@ -52,85 +74,45 @@ export const setAvailability = async (req, res, next) => {
 
 /**
  * Book counseling session (Student only)
- * Uses atomic operations to prevent double booking
+ * Uses atomic operations to prevent double booking.
+ * Students must select a valid explicitly designated available slot (bookingId).
  */
 export const bookSession = async (req, res, next) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    const { counselorId, slotStart, slotEnd, studentNotes } = req.body;
+    const { bookingId, studentNotes } = req.body;
 
-    if (!counselorId || !slotStart || !slotEnd) {
+    if (!bookingId) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(400).json({ message: 'Counselor ID, start and end times are required' });
+      return res.status(400).json({ message: 'Booking ID is required' });
     }
 
-    // Verify counselor exists and belongs to same college
-    const counselor = await User.findOne({
-      _id: counselorId,
-      role: 'counselor',
-      collegeId: req.user.collegeId,
-      isActive: true
-    }).session(session);
+    // Lock the booking if it's currently 'available'
+    const booking = await Booking.findOneAndUpdate(
+      { _id: bookingId, status: 'available' },
+      { 
+        status: 'pending',
+        studentId: req.user.userId,
+        studentNotes: studentNotes || ''
+      },
+      { new: true, session }
+    );
 
-    if (!counselor) {
+    if (!booking) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(404).json({ message: 'Counselor not found' });
+      return res.status(400).json({ message: 'Time slot is no longer available or does not exist.' });
     }
-
-    const start = new Date(slotStart);
-    const end = new Date(slotEnd);
-
-    if (start >= end) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(400).json({ message: 'End time must be after start time' });
-    }
-
-    if (start < new Date()) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(400).json({ message: 'Cannot book slots in the past' });
-    }
-
-    // Atomic check for conflicts using session
-    const conflict = await Booking.findOne({
-      counselorId,
-      status: { $in: ['pending', 'approved'] },
-      $or: [
-        {
-          slotStart: { $lt: end },
-          slotEnd: { $gt: start }
-        }
-      ]
-    }).session(session);
-
-    if (conflict) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(400).json({ message: 'Time slot is already booked' });
-    }
-
-    // Create booking atomically
-    const booking = await Booking.create([{
-      studentId: req.user.userId,
-      counselorId,
-      collegeId: req.user.collegeId,
-      slotStart: start,
-      slotEnd: end,
-      studentNotes,
-      status: 'pending'
-    }], { session });
 
     await session.commitTransaction();
     session.endSession();
 
-    res.status(201).json({
-      message: 'Booking request created successfully',
-      booking: booking[0]
+    res.status(200).json({
+      message: 'Session requested successfully.',
+      booking
     });
   } catch (error) {
     await session.abortTransaction();
