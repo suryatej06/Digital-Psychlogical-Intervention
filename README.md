@@ -349,6 +349,7 @@ To test the platform:
    cd backend && npm install
    cd ../frontend && npm install
    npm install recharts react-is --legacy-peer-deps
+   npm install framer-motion --legacy-peer-deps
    ```
 
 2. **Configure environment:**
@@ -441,3 +442,4 @@ For issues or questions:
 ---
 
 **Built with ❤️ using MERN Stack**
+```
