@@ -30,6 +30,15 @@ const chatSessionSchema = new mongoose.Schema({
     type: String,
     enum: ['active', 'closed'],
     default: 'active'
+  },
+  sessionIntensity: {
+    type: String,
+    enum: ['Neutral', 'Anxious', 'Distressed', 'Crisis'],
+    default: 'Neutral'
+  },
+  suggestedToolsThisSession: {
+    type: [String],
+    default: () => []
   }
 }, {
   timestamps: true

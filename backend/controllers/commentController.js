@@ -7,14 +7,13 @@ import User from '../models/User.js';
  */
 export const createComment = async (req, res, next) => {
   try {
-    const { content, isAnonymous } = req.body;
+    const { content, isAnonymous, parentCommentId, mentions } = req.body;
     const { postId } = req.params;
 
     if (!content) {
       return res.status(400).json({ message: 'Content is required' });
     }
 
-    // Verify post exists and belongs to same college
     const post = await Post.findOne({
       _id: postId,
       collegeId: req.user.collegeId,
@@ -24,6 +23,23 @@ export const createComment = async (req, res, next) => {
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
+
+    let parentId = null;
+    if (parentCommentId) {
+      const parent = await Comment.findOne({
+        _id: parentCommentId,
+        postId,
+        isActive: true
+      });
+      if (!parent) {
+        return res.status(400).json({ message: 'Invalid parent comment for this post' });
+      }
+      parentId = parent._id;
+    }
+
+    const mentionList = Array.isArray(mentions)
+      ? mentions.map((m) => String(m).trim()).filter(Boolean)
+      : [];
 
     const user = await User.findById(req.user.userId);
     if (!user) {
@@ -36,7 +52,9 @@ export const createComment = async (req, res, next) => {
       authorAlias: isAnonymous ? user.alias : user.name,
       content,
       isAnonymous: isAnonymous || false,
-      collegeId: req.user.collegeId
+      collegeId: req.user.collegeId,
+      parentCommentId: parentId,
+      mentions: mentionList
     });
 
     res.status(201).json({
@@ -62,7 +80,6 @@ export const deleteComment = async (req, res, next) => {
       return res.status(404).json({ message: 'Comment not found' });
     }
 
-    // Users can only delete their own comments (unless admin)
     if (comment.author.toString() !== req.user.userId.toString() && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'You can only delete your own comments' });
     }

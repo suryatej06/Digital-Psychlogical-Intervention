@@ -1,6 +1,6 @@
 import ChatSession from '../models/ChatSession.js';
 import Message from '../models/Message.js';
-import { getAIResponse } from '../services/aiService.js';
+import { getAIResponseJSON, getMockResponseJSON } from '../services/aiService.js';
 import {
   scanForRisk,
   calculateRiskScore,
@@ -8,19 +8,28 @@ import {
   exceedsRiskThreshold
 } from '../services/riskDetection.js';
 
+function sessionPayload(session, extra = {}) {
+  return {
+    id: session._id,
+    riskScore: session.riskScore,
+    isFlagged: session.isFlagged,
+    status: session.status,
+    sessionIntensity: session.sessionIntensity || 'Neutral',
+    ...extra
+  };
+}
+
 /**
  * Create or get active chat session
  */
 export const getOrCreateSession = async (req, res, next) => {
   try {
-    // Find active session for user
     let session = await ChatSession.findOne({
       userId: req.user.userId,
       status: 'active'
     });
 
     if (!session) {
-      // Create new session
       session = await ChatSession.create({
         userId: req.user.userId,
         collegeId: req.user.collegeId,
@@ -28,17 +37,11 @@ export const getOrCreateSession = async (req, res, next) => {
       });
     }
 
-    // Get all messages for this session
     const messages = await Message.find({ sessionId: session._id })
       .sort({ createdAt: 1 });
 
     res.json({
-      session: {
-        id: session._id,
-        riskScore: session.riskScore,
-        isFlagged: session.isFlagged,
-        status: session.status
-      },
+      session: sessionPayload(session),
       messages
     });
   } catch (error) {
@@ -57,7 +60,6 @@ export const sendMessage = async (req, res, next) => {
       return res.status(400).json({ message: 'Message content is required' });
     }
 
-    // Get or create session
     let session = await ChatSession.findOne({
       userId: req.user.userId,
       status: 'active'
@@ -71,10 +73,17 @@ export const sendMessage = async (req, res, next) => {
       });
     }
 
-    // Scan for risk keywords
     const riskScan = scanForRisk(content);
-    
-    // Save user message
+
+    const priorRaw = await Message.find({ sessionId: session._id })
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .lean();
+    const history = priorRaw.reverse().map((msg) => ({
+      role: msg.role,
+      content: msg.content
+    }));
+
     const userMessage = await Message.create({
       sessionId: session._id,
       role: 'user',
@@ -82,59 +91,85 @@ export const sendMessage = async (req, res, next) => {
       riskKeywords: riskScan.keywords
     });
 
-    let aiResponse;
-    let shouldFlag = false;
+    let replyText;
+    let intensity = 'Neutral';
+    let suggested_ui = null;
 
-    // Handle crisis situation
     if (riskScan.level === 'crisis') {
-      aiResponse = getCrisisResponse();
-      shouldFlag = true;
-      session.riskScore = 100; // Maximum risk score
-    } else {
-      // Get conversation history
-      const rawHistory = await Message.find({ sessionId: session._id })
-        .sort({ createdAt: -1 })
-        .limit(10)
-        .lean();
-      const history = rawHistory.reverse().map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }));
-
-      // Get AI response
-      aiResponse = await getAIResponse(content, history);
-
-      // Update risk score
-      session.riskScore = calculateRiskScore(content, session.riskScore);
-    }
-
-    // Check if risk threshold exceeded
-    if (exceedsRiskThreshold(session.riskScore) || shouldFlag) {
+      replyText = getCrisisResponse();
+      intensity = 'Crisis';
+      suggested_ui = null;
+      session.riskScore = 100;
+      session.sessionIntensity = 'Crisis';
       session.isFlagged = true;
-      session.flagReason = shouldFlag 
-        ? 'Crisis keywords detected' 
-        : 'Risk score threshold exceeded';
+      session.flagReason = 'Crisis keywords detected';
+    } else {
+      session.riskScore = calculateRiskScore(content, session.riskScore);
+
+      const fromSession = session.suggestedToolsThisSession || [];
+      const fromHistory = priorRaw
+        .filter((m) => m.role === 'assistant' && m.suggestedUi)
+        .map((m) => m.suggestedUi);
+      const alreadySuggestedTools = [...new Set([...fromSession, ...fromHistory])].filter(Boolean);
+
+      let parsed;
+      try {
+        parsed = await getAIResponseJSON(
+          content.trim(),
+          history,
+          alreadySuggestedTools
+        );
+      } catch {
+        parsed = getMockResponseJSON(content.trim(), alreadySuggestedTools);
+      }
+
+      replyText = parsed.reply;
+      intensity = parsed.intensity;
+      suggested_ui = parsed.suggested_ui;
+      session.sessionIntensity = intensity;
+
+      if (intensity === 'Crisis') {
+        session.isFlagged = true;
+        session.riskScore = 100;
+        if (!session.flagReason) {
+          session.flagReason = 'AI assessed crisis intensity';
+        } else if (!session.flagReason.includes('AI assessed crisis')) {
+          session.flagReason = `${session.flagReason}; AI assessed crisis intensity`;
+        }
+      }
+
+      const toolsSoFar = session.suggestedToolsThisSession || [];
+      if (suggested_ui && !toolsSoFar.includes(suggested_ui)) {
+        session.suggestedToolsThisSession = [...toolsSoFar, suggested_ui];
+      }
+
+      if (exceedsRiskThreshold(session.riskScore)) {
+        session.isFlagged = true;
+        if (!session.flagReason) {
+          session.flagReason = 'Risk score threshold exceeded';
+        }
+      }
     }
 
     await session.save();
 
-    // Save AI response
     const assistantMessage = await Message.create({
       sessionId: session._id,
       role: 'assistant',
-      content: aiResponse
+      content: replyText,
+      suggestedUi: suggested_ui,
+      intensity
     });
+
+    const suggestion = exceedsRiskThreshold(session.riskScore)
+      ? 'We recommend speaking with a counselor. Would you like to book a session?'
+      : null;
 
     res.json({
       message: assistantMessage,
-      session: {
-        id: session._id,
-        riskScore: session.riskScore,
-        isFlagged: session.isFlagged,
-        suggestion: exceedsRiskThreshold(session.riskScore) 
-          ? 'We recommend speaking with a counselor. Would you like to book a session?'
-          : null
-      }
+      intensity,
+      suggested_ui,
+      session: sessionPayload(session, { suggestion })
     });
   } catch (error) {
     next(error);
@@ -179,13 +214,14 @@ export const getChatHistory = async (req, res, next) => {
       sessions.map(async (session) => {
         const messages = await Message.find({ sessionId: session._id })
           .sort({ createdAt: 1 })
-          .limit(5); // Last 5 messages for preview
+          .limit(5);
 
         return {
           id: session._id,
           riskScore: session.riskScore,
           isFlagged: session.isFlagged,
           status: session.status,
+          sessionIntensity: session.sessionIntensity || 'Neutral',
           createdAt: session.createdAt,
           messageCount: await Message.countDocuments({ sessionId: session._id }),
           preview: messages

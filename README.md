@@ -12,15 +12,15 @@ Featuring a modern **Tailwind frosted-glass (glassmorphism)** aesthetic, the pla
 - **Multi-Tenant Architecture**: College-based data isolation
 - **Role-Based Access Control**: Tailored dashboards for Student, Counselor, and Admin roles
 - **Authentication**: JWT-based secure authentication
-- **Smart Resource Hub**: AI-driven media recommendations dynamically sorted based on the user's latest check-in severities. Counselors and Admins share a dedicated, grid-based Resource Management Hub.
-- **Community Forum**: Anonymous posting and commenting with moderation
-- **AI Chatbot**: OpenAI-powered mental health support with real-time risk detection
+- **Smart Resource Hub**: AI-driven media recommendations dynamically sorted based on the user's latest check-in severities (powered by OpenAI). Features interactive, animated Breathing and Grounding exercise widgets. Counselors and Admins share a dedicated, grid-based Resource Management Hub.
+- **Community Forum**: Anonymous posting, nested comment threads (up to depth 3) with `@mentions`, and moderation.
+- **AI Chatbot**: **Gemini-powered** mental health support utilizing structured JSON responses, real-time risk detection, session intensity tracking, and interactive therapeutic widgets rendered directly in the chat.
 - **Counseling Booking**: Schedule and manage counseling sessions
 - **Actionable Admin Dashboard**: Native tools to "Force Delete" flagged posts, dismiss false reports, and mark high-risk AI chat sessions as "Resolved" after intervention.
-- **Stability & Polish**: React Error Boundaries, Disclaimer Consent Modals, Mobile-responsive UI 
+- **Stability & Polish**: React Error Boundaries, Disclaimer Consent Modals, Mobile-responsive UI, and robust `prefers-reduced-motion` accessibility support.
 
 ### Security & Safety Features
-- **Automated Crisis Safety Triggers**: Backend isolates self-harm indicators (e.g., PHQ-9 Q9) and automatically flags `needsIntervention` to alert Counselors/Admins.
+- **Automated Crisis Safety Triggers**: Backend isolates self-harm indicators (e.g., PHQ-9 Q9) and automatically flags `needsIntervention` to alert Counselors/Admins. Chatbot sessions automatically deploy a pulsing `CrisisInterventionBanner` when acute risk is detected.
 - Password hashing with bcrypt
 - JWT token authentication
 - Multi-tenant data isolation with strict enforcement
@@ -35,7 +35,8 @@ Featuring a modern **Tailwind frosted-glass (glassmorphism)** aesthetic, the pla
 - Node.js (v16 or higher)
 - MongoDB (v5 or higher)
 - npm or yarn
-- OpenAI API key (optional - platform works with mock responses if not provided)
+- **Gemini API key** (Optional but recommended - platform falls back to mock JSON responses if not provided)
+- **OpenAI API key** (Optional - strictly used for dynamic resource tips)
 
 ## 🛠️ Installation
 
@@ -62,6 +63,8 @@ PORT=5000
 NODE_ENV=development
 MONGODB_URI=mongodb://localhost:27017/mental-health-platform
 JWT_SECRET=your-super-secret-jwt-key-change-in-production
+GEMINI_API_KEY=your-gemini-api-key-here
+GEMINI_MODEL=gemini-2.0-flash
 OPENAI_API_KEY=your-openai-api-key-here
 FRONTEND_URL=http://localhost:5173
 ```
@@ -128,7 +131,7 @@ The frontend will run on `http://localhost:5173`
 The database is automatically provisioned and securely populated when you run `node seed.js`. This creates:
 - A default college (code: DEFAULT)
 - A default admin user (email: admin@default.com, password: admin123)
-- 35 Highly Curated clinical articles, videos, and crisis lines tagged for AI integration.
+- 20+ Highly Curated clinical articles, videos, and crisis lines tagged for AI integration.
 
 **No manual database editing required!**
 
@@ -148,84 +151,88 @@ After logging in as admin:
 ```text
 mental-health-platform/
 ├── backend/
-│   ├── config/
-│   │   └── database.js
-│   ├── controllers/
-│   │   ├── adminController.js
-│   │   ├── assessmentController.js
-│   │   ├── authController.js
-│   │   ├── bookingController.js
-│   │   ├── chatController.js
-│   │   ├── collegeController.js
-│   │   ├── commentController.js
-│   │   ├── postController.js
-│   │   └── resourceController.js
-│   ├── middleware/
-│   │   ├── auth.js
-│   │   ├── errorHandler.js
-│   │   └── roleCheck.js
-│   ├── models/
-│   │   ├── Booking.js
-│   │   ├── ChatSession.js
-│   │   ├── College.js
-│   │   ├── Comment.js
-│   │   ├── Message.js
-│   │   ├── Post.js
-│   │   ├── Report.js
-│   │   ├── Resource.js
-│   │   ├── User.js (Includes needsIntervention and onboarding flags)
-│   │   └── UserResult.js (Supports granular sub-scores)
-│   ├── routes/
-│   │   ├── admin.js
-│   │   ├── assessments.js
-│   │   ├── auth.js
-│   │   ├── bookings.js
-│   │   ├── chat.js
-│   │   ├── colleges.js
-│   │   ├── posts.js
-│   │   └── resources.js
-│   ├── services/
-│   │   ├── aiService.js
-│   │   └── riskDetection.js
-│   ├── .env.example
-│   ├── package.json
-│   └── server.js
+│   ├── config/
+│   │   └── database.js
+│   ├── controllers/
+│   │   ├── adminController.js
+│   │   ├── assessmentController.js
+│   │   ├── authController.js
+│   │   ├── bookingController.js
+│   │   ├── chatController.js
+│   │   ├── collegeController.js
+│   │   ├── commentController.js
+│   │   ├── postController.js
+│   │   └── resourceController.js
+│   ├── middleware/
+│   │   ├── auth.js
+│   │   ├── errorHandler.js
+│   │   └── roleCheck.js
+│   ├── models/
+│   │   ├── Booking.js
+│   │   ├── ChatSession.js (Includes sessionIntensity & tool tracking)
+│   │   ├── College.js
+│   │   ├── Comment.js (Supports parentCommentId & mentions)
+│   │   ├── Message.js
+│   │   ├── Post.js
+│   │   ├── Report.js
+│   │   ├── Resource.js
+│   │   ├── User.js (Includes needsIntervention and onboarding flags)
+│   │   └── UserResult.js (Supports granular sub-scores)
+│   ├── routes/
+│   │   ├── admin.js
+│   │   ├── assessments.js
+│   │   ├── auth.js
+│   │   ├── bookings.js
+│   │   ├── chat.js
+│   │   ├── colleges.js
+│   │   ├── posts.js
+│   │   └── resources.js
+│   ├── services/
+│   │   ├── aiService.js (Gemini JSON integration & OpenAI fallback)
+│   │   └── riskDetection.js
+│   ├── .env.example
+│   ├── package.json
+│   └── server.js
 ├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── DisclaimerModal.jsx
-│   │   │   ├── ErrorBoundary.jsx
-│   │   │   ├── ManageResources.jsx
-│   │   │   ├── Navbar.jsx
-│   │   │   └── ProtectedRoute.jsx
-│   │   ├── context/
-│   │   │   └── AuthContext.jsx
-│   │   ├── data/
-│   │   │   └── onboardingFlow.js
-│   │   ├── pages/
-│   │   │   ├── AdminPanel.jsx
-│   │   │   ├── Bookings.jsx
-│   │   │   ├── Chatbot.jsx
-│   │   │   ├── CheckIn.jsx
-│   │   │   ├── Community.jsx
-│   │   │   ├── Dashboard.jsx
-│   │   │   ├── Landing.jsx
-│   │   │   ├── Login.jsx
-│   │   │   ├── Onboarding.jsx
-│   │   │   ├── Progress.jsx
-│   │   │   ├── Register.jsx
-│   │   │   └── Resources.jsx
-│   │   ├── services/
-│   │   │   └── api.js
-│   │   ├── App.jsx
-│   │   ├── index.css
-│   │   └── main.jsx
-│   ├── .env.example
-│   ├── index.html
-│   ├── package.json
-│   ├── postcss.config.js
-│   ├── tailwind.config.js
-│   └── vite.config.js
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── CrisisInterventionBanner.jsx
+│   │   │   ├── DisclaimerModal.jsx
+│   │   │   ├── ErrorBoundary.jsx
+│   │   │   ├── ExerciseWidgets.jsx
+│   │   │   ├── ManageResources.jsx
+│   │   │   ├── Navbar.jsx
+│   │   │   └── ProtectedRoute.jsx
+│   │   ├── constants/
+│   │   │   └── crisisLines.js
+│   │   ├── context/
+│   │   │   └── AuthContext.jsx
+│   │   ├── data/
+│   │   │   └── onboardingFlow.js
+│   │   ├── pages/
+│   │   │   ├── AdminPanel.jsx
+│   │   │   ├── Bookings.jsx
+│   │   │   ├── Chatbot.jsx
+│   │   │   ├── CheckIn.jsx
+│   │   │   ├── Community.jsx
+│   │   │   ├── Dashboard.jsx
+│   │   │   ├── Landing.jsx
+│   │   │   ├── Login.jsx
+│   │   │   ├── Onboarding.jsx
+│   │   │   ├── Progress.jsx
+│   │   │   ├── Register.jsx
+│   │   │   └── Resources.jsx
+│   │   ├── services/
+│   │   │   └── api.js
+│   │   ├── App.jsx
+│   │   ├── index.css
+│   │   └── main.jsx
+│   ├── .env.example
+│   ├── index.html
+│   ├── package.json
+│   ├── postcss.config.js
+│   ├── tailwind.config.js
+│   └── vite.config.js
 ├── .gitignore
 └── README.md
 ```
@@ -251,13 +258,14 @@ mental-health-platform/
 
 ### Posts
 - `GET /api/posts` - Get all posts (filtered by college)
-- `GET /api/posts/:id` - Get post with comments
+- `GET /api/posts/:id` - Get post with nested comment tree
+- `GET /api/posts/:id/mention-candidates` - Get list of users available to @mention
 - `POST /api/posts` - Create post (Student only)
 - `POST /api/posts/:id/like` - Like/unlike post
 - `POST /api/posts/:id/report` - Report post
 
 ### Comments
-- `POST /api/posts/:postId/comments` - Create comment
+- `POST /api/posts/:postId/comments` - Create comment (supports `parentCommentId` and `mentions`)
 - `DELETE /api/posts/comments/:id` - Delete comment
 
 ### Chat
@@ -293,7 +301,7 @@ mental-health-platform/
 2. **Dashboard:** View AI-recommended resources tailored to your specific stress and mood levels.
 3. **Progress:** Visit the *My Progress* tab to view beautiful area charts tracking your mental health journey over time.
 4. **Routine:** Take routine *Check-Ins* to update your stats and refresh your resource recommendations.
-5. **Support:** Participate in the anonymous Community forum, use the AI Chatbot, or book a counseling session.
+5. **Support:** Participate in the anonymous Community forum with threaded replies, use the Gemini AI Chatbot, or book a counseling session.
 
 ### For Counselors
 1. Log in to access the dedicated Counselor Dashboard.
@@ -326,8 +334,9 @@ To test the platform:
 4. Test each feature:
    - Complete the onboarding flow
    - Browse resources and verify AI recommendations
-   - Create posts and comments
+   - Create posts, use @mentions in nested comments
    - Trigger a safety alert via the chatbot or Check-In to test Admin moderation
+   - Check the new interactive Breathing/Grounding tools in the chatbot
    - Book counseling sessions
    - Admin functions (Resolve flags, dismiss posts)
 
@@ -345,7 +354,7 @@ To test the platform:
 
 2. **Configure environment:**
    - Copy `.env.example` to `.env` in both backend and frontend
-   - Update MongoDB URI and JWT_SECRET
+   - Update MongoDB URI, JWT_SECRET, and API Keys.
 
 3. **Start MongoDB:**
    ```bash
@@ -394,20 +403,20 @@ To test the platform:
 
 ## 📝 Notes
 
-- The chatbot uses OpenAI API if `OPENAI_API_KEY` is provided, otherwise uses mock responses
+- The chatbot uses the Gemini API if `GEMINI_API_KEY` is provided, otherwise uses mock JSON responses
 - Risk detection scans for crisis keywords and calculates risk scores
 - All data is isolated by `collegeId` for multi-tenant security
 - Anonymous posts/comments store user ID but display alias/name based on `isAnonymous` flag
 
-## ✅ Recent Major Updates (Phases 6 & 7)
+## ✅ Recent Major Updates
+- **Three-Objective Refactor:** Migrated the AI Chatbot to **Gemini 2.0** utilizing strictly structured JSON outputs. Introduced **nested comment threads with @mentions** in the community forum. Developed **reusable, animated clinical exercise widgets** (Breathing & Grounding) shared seamlessly between the AI Chatbot and Resource Hub.
 - **Stigma-Free Redesign:** Ripped out legacy clinical testing forms. Replaced with a warm, progressive-disclosure onboarding flow that seamlessly maps to clinical scales (PHQ-9, GAD-7, PSS).
 - **Visual Analytics:** Integrated `recharts` to build a premium user progress dashboard mapping wellbeing trends.
 - **Safety First:** Added the `needsIntervention` database trigger to instantly flag accounts showing self-harm indicators during check-ins.
 - **Counselor Empowerment:** Counselors now have full CRUD access to the Resource Library via a standalone UI component alongside Admin users.
 - **Actionable Moderation:** Upgraded the Admin panel from simple viewing to active state-management (Force Delete, Dismiss, Resolve).
 - **Unified Glassmorphic UI:** Standardized the entire platform using Tailwind frosted glass, vibrant gradients, micro-animations, and seamless responsiveness.
-- **AI-Driven Recommendations**: Dynamically generates personalized resource tips via OpenAI based on the user's latest assessment severities.
-- **Refactoring to ES Modules**: Entire backend controllers, models, routes, and `seed.js` script successfully migrated to pure ES modules using modern middleware architecture.
+- **Refactoring to ES Modules:** Entire backend controllers, models, routes, and `seed.js` script successfully migrated to pure ES modules using modern middleware architecture.
 
 ## 🤝 Contributing
 

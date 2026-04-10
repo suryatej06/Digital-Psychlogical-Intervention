@@ -3,6 +3,7 @@ import {
   createPost,
   getPosts,
   getPostById,
+  getMentionCandidates,
   toggleLike,
   reportPost,
   deletePost
@@ -24,6 +25,7 @@ router.use(enforceCollegeAccess);
 // Post routes
 router.post('/', roleCheck(['student']), createPost);
 router.get('/', getPosts);
+router.get('/:id/mention-candidates', getMentionCandidates);
 router.get('/:id', getPostById);
 router.post('/:id/like', toggleLike);
 router.post('/:id/report', reportPost);

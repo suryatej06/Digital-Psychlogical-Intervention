@@ -1,5 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
+import { BreathingExercise, GroundingExercise } from '../components/ExerciseWidgets';
+import { CRISIS_LINES } from '../constants/crisisLines';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const CATEGORIES = ['All', 'Anxiety', 'Depression', 'Sleep', 'Stress', 'Mindfulness', 'Self-care', 'Crisis'];
@@ -18,86 +20,12 @@ const SORT_OPTIONS = [
   { value: 'za', label: 'Z – A' },
 ];
 
-const CRISIS_LINES = [
-  { name: 'iCall (India)', number: '9152987821', url: 'https://icallhelpline.org/' },
-  { name: 'Vandrevala Foundation', number: '1860-2662-345', url: 'https://www.vandrevalafoundation.com/' },
-  { name: 'Samaritans (international)', number: '116 123', url: 'https://www.samaritans.org/' },
-];
-
 const TYPE_META = {
   article: { label: 'Article', icon: '📄', color: 'text-emerald-700 bg-emerald-100 border-emerald-300', action: 'Read' },
   video: { label: 'Video', icon: '▶', color: 'text-indigo-700 bg-indigo-100 border-indigo-300', action: 'Watch' },
   audio: { label: 'Audio', icon: '🎧', color: 'text-amber-700 bg-amber-100 border-amber-300', action: 'Listen' },
   exercise: { label: 'Exercise', icon: '✦', color: 'text-rose-700 bg-rose-100 border-rose-300', action: 'Open' },
 };
-
-// ─── Breathing exercise ───────────────────────────────────────────────────────
-function BreathingExercise() {
-  const [phase, setPhase] = useState('idle');
-  const [count, setCount] = useState(0);
-  const [cycles, setCycles] = useState(0);
-  const intervalRef = useRef(null);
-
-  const PHASES = [
-    { name: 'inhale', label: 'Breathe in', duration: 4, next: 'hold' },
-    { name: 'hold', label: 'Hold', duration: 7, next: 'exhale' },
-    { name: 'exhale', label: 'Breathe out', duration: 8, next: 'inhale' },
-  ];
-  const cur = PHASES.find(p => p.name === phase);
-
-  useEffect(() => {
-    if (phase === 'idle') return;
-    let rem = cur.duration;
-    setCount(rem);
-    intervalRef.current = setInterval(() => {
-      rem -= 1;
-      setCount(rem);
-      if (rem <= 0) {
-        clearInterval(intervalRef.current);
-        if (cur.next === 'inhale') setCycles(c => c + 1);
-        setPhase(cur.next);
-      }
-    }, 1000);
-    return () => clearInterval(intervalRef.current);
-  }, [phase]);
-
-  const stop = () => { clearInterval(intervalRef.current); setPhase('idle'); setCycles(0); setCount(0); };
-
-  return (
-    <div className="bg-white/40 backdrop-blur-lg border border-white/40 rounded-3xl p-6 mb-8 shadow-xl transition-all duration-500">
-      <div className="flex items-center gap-6">
-        <div className="relative flex-shrink-0 w-20 h-20 flex items-center justify-center">
-          <div className={`absolute inset-0 rounded-full border-4 border-indigo-400 opacity-20 ${phase !== 'idle' ? 'animate-ping' : ''}`}></div>
-          <div
-            className="w-16 h-16 rounded-full border-4 border-indigo-500 bg-indigo-50 flex items-center justify-center transition-all duration-1000 shadow-inner z-10"
-            style={{
-              transform: phase === 'exhale' ? 'scale(0.85)' : phase !== 'idle' ? 'scale(1.25)' : 'scale(1)',
-              transitionTimingFunction: phase === 'inhale' ? 'ease-in' : phase === 'exhale' ? 'ease-out' : 'ease-in-out',
-              transitionDuration: phase === 'inhale' ? '4s' : phase === 'exhale' ? '8s' : '0.5s'
-            }}
-          >
-            {phase !== 'idle' && <span className="text-xl font-bold text-indigo-700">{count}</span>}
-          </div>
-        </div>
-
-        <div className="flex-1">
-          <h3 className="text-xl font-bold text-gray-900 mb-1">4-7-8 Breathing Exercise</h3>
-          <p className="text-gray-600 text-sm">
-            {phase === 'idle'
-              ? 'Calm your nervous system in a few cycles. Press start to begin.'
-              : <span className="font-medium text-indigo-700">{cur.label} — {count}s {cycles > 0 && `(Cycles completed: ${cycles})`}</span>
-            }
-          </p>
-        </div>
-
-        {phase === 'idle'
-          ? <button onClick={() => setPhase('inhale')} className="px-6 py-2 rounded-xl bg-indigo-600 text-white font-semibold shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all">Start</button>
-          : <button onClick={stop} className="px-6 py-2 rounded-xl border border-gray-300 bg-white/50 text-gray-700 font-medium hover:bg-white transition-all">Stop</button>
-        }
-      </div>
-    </div>
-  );
-}
 
 // ─── Resource card ─────────────────────────────────────────────────────────────
 function ResourceCard({ resource }) {
@@ -312,8 +240,13 @@ export default function Resources() {
           </div>
         </div>
 
-        {/* Built-in breathing exercise */}
-        {showBreathing && <BreathingExercise />}
+        {/* Built-in exercises — collapsible cards on the hub */}
+        {showBreathing && (
+          <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            <BreathingExercise collapsible defaultExpanded={false} />
+            <GroundingExercise collapsible defaultExpanded={false} />
+          </div>
+        )}
 
         {/* Main Resource Grid */}
         <div className="mb-12">

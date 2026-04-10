@@ -1,15 +1,43 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Sparkles, X, Brain, Heart, AlertTriangle } from 'lucide-react';
-import { chatAPI } from '../services/api'; // Adjust path if needed
+import { chatAPI } from '../services/api';
+import CrisisInterventionBanner from '../components/CrisisInterventionBanner';
+import { BreathingExercise, GroundingExercise } from '../components/ExerciseWidgets';
+
+function intensityDotClass(intensity) {
+  switch (intensity) {
+    case 'Anxious':
+      return 'bg-amber-400';
+    case 'Distressed':
+      return 'bg-orange-500';
+    case 'Crisis':
+      return 'bg-red-600';
+    default:
+      return 'bg-emerald-500';
+  }
+}
+
+function intensityLabel(intensity) {
+  switch (intensity) {
+    case 'Anxious':
+      return 'Elevated concern';
+    case 'Distressed':
+      return 'High distress';
+    case 'Crisis':
+      return 'Crisis level';
+    default:
+      return 'Settled';
+  }
+}
 
 const Chatbot = () => {
-  // --- Original State & Logic ---
   const [session, setSession] = useState(null);
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [sessionLoading, setSessionLoading] = useState(true);
+  const [currentIntensity, setCurrentIntensity] = useState('Neutral');
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -29,6 +57,7 @@ const Chatbot = () => {
       setSessionLoading(true);
       const response = await chatAPI.getSession();
       setSession(response.session);
+      setCurrentIntensity(response.session?.sessionIntensity || 'Neutral');
       setMessages(response.messages ?? []);
     } catch (error) {
       console.error('Failed to load session:', error);
@@ -71,10 +100,9 @@ const Chatbot = () => {
 
       if (response.session) {
         setSession(response.session);
-        if (response.session.isFlagged || response.session.suggestion) {
-          alert(response.session.suggestion || 'Your session has been flagged for review. Please consider speaking with a counselor.');
-        }
       }
+      const nextIntensity = response.intensity ?? response.session?.sessionIntensity ?? 'Neutral';
+      setCurrentIntensity(nextIntensity);
     } catch (error) {
       console.error('Failed to send message:', error);
       alert(error.response?.data?.message || 'Failed to send message');
@@ -98,6 +126,10 @@ const Chatbot = () => {
   };
 
   // --- UI Render ---
+
+  const showCrisisBanner =
+    currentIntensity === 'Crisis' ||
+    (session && /crisis/i.test(session.flagReason || ''));
 
   if (sessionLoading) {
     return (
@@ -133,7 +165,7 @@ const Chatbot = () => {
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="bg-white/60 backdrop-blur-xl border border-white/50 shadow-2xl rounded-3xl overflow-hidden flex flex-col h-[700px] relative z-10"
+        className="bg-white/80 backdrop-blur-md border border-white/50 shadow-2xl rounded-3xl overflow-hidden flex flex-col h-[calc(100vh-120px)] relative z-10"
       >
 
         {/* Header */}
@@ -151,12 +183,13 @@ const Chatbot = () => {
                 AI Companion <Sparkles className="w-4 h-4 text-indigo-500" />
               </h2>
               <div className="flex items-center gap-1.5">
-                <motion.span
-                  animate={{ scale: [1, 1.3, 1] }}
-                  transition={{ repeat: Infinity, duration: 2 }}
-                  className="w-2 h-2 rounded-full bg-green-500"
+                <span
+                  className={`w-2.5 h-2.5 rounded-full shrink-0 ${intensityDotClass(currentIntensity)}`}
+                  title={intensityLabel(currentIntensity)}
                 />
-                <span className="text-xs text-gray-500 font-medium">Online • Ready to help</span>
+                <span className="text-xs text-gray-500 font-medium">
+                  Session tone: {currentIntensity} · {intensityLabel(currentIntensity)}
+                </span>
               </div>
             </div>
           </div>
@@ -189,13 +222,20 @@ const Chatbot = () => {
           </div>
         </div>
 
-        {/* Flagged Banner Integration */}
-        {session?.isFlagged && (
+        {showCrisisBanner && (
+          <div className="border-b border-red-200/50 px-4 py-3 bg-red-950/5">
+            <CrisisInterventionBanner />
+          </div>
+        )}
+
+        {session?.isFlagged && !showCrisisBanner && (
           <div className="bg-yellow-50/80 backdrop-blur-md border-b border-yellow-200 text-yellow-800 px-6 py-3 flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 flex-shrink-0 text-yellow-600 mt-0.5" />
             <div className="text-sm">
               <p className="font-semibold">Important Notice</p>
-              <p>Your session has been flagged for review. We strongly recommend speaking with a professional counselor.</p>
+              <p>
+                Your session has been flagged for review. We strongly recommend speaking with a professional counselor.
+              </p>
             </div>
           </div>
         )}
@@ -238,6 +278,16 @@ const Chatbot = () => {
                       }`}
                   >
                     <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                    {msg.role === 'assistant' && msg.suggestedUi === 'breathing_tool' && (
+                      <div className="mt-2 w-full">
+                        <BreathingExercise compact collapsible defaultExpanded={false} />
+                      </div>
+                    )}
+                    {msg.role === 'assistant' && msg.suggestedUi === 'grounding_tool' && (
+                      <div className="mt-2 w-full">
+                        <GroundingExercise compact collapsible defaultExpanded={false} />
+                      </div>
+                    )}
                     <p className={`text-[10px] mt-2 font-medium ${msg.role === 'user' ? 'text-indigo-100' : 'text-gray-400'
                       }`}>
                       {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

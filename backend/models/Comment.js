@@ -34,6 +34,16 @@ const commentSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  parentCommentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Comment',
+    default: null,
+    index: true
+  },
+  mentions: {
+    type: [String],
+    default: () => []
   }
 }, {
   timestamps: true
