@@ -63,6 +63,7 @@ export const resourcesAPI = {
 export const postsAPI = {
   getAll: () => api.get('/posts'),
   getById: (id) => api.get(`/posts/${id}`),
+  getMentionCandidates: (postId) => api.get(`/posts/${postId}/mention-candidates`),
   create: (data) => api.post('/posts', data),
   toggleLike: (id) => api.post(`/posts/${id}/like`),
   report: (id, reason) => api.post(`/posts/${id}/report`, { reason }),
@@ -73,6 +74,8 @@ export const postsAPI = {
 // Comments API
 export const commentsAPI = {
   create: (postId, data) => api.post(`/posts/${postId}/comments`, data),
+  reply: (postId, parentCommentId, data) =>
+    api.post(`/posts/${postId}/comments`, { ...data, parentCommentId }),
   delete: (id) => api.delete(`/posts/comments/${id}`)
 };
 

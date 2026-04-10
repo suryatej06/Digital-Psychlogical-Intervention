@@ -18,7 +18,16 @@ const messageSchema = new mongoose.Schema({
   },
   riskKeywords: [{
     type: String
-  }]
+  }],
+  suggestedUi: {
+    type: String,
+    default: null
+  },
+  intensity: {
+    type: String,
+    enum: ['Neutral', 'Anxious', 'Distressed', 'Crisis'],
+    default: 'Neutral'
+  }
 }, {
   timestamps: true
 });

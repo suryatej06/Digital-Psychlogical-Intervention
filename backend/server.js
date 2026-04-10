@@ -19,6 +19,26 @@ dotenv.config();
 
 const app = express();
 
+// Safe startup config logs (do not print secrets)
+const isRealKey = (v) => {
+  if (!v) return false;
+  const s = String(v).trim();
+  if (!s) return false;
+  const lowered = s.toLowerCase();
+  return !(
+    lowered.includes('your-openai-api-key') ||
+    lowered.includes('your-super-secret') ||
+    lowered.includes('change-in-production') ||
+    lowered === 'changeme' ||
+    lowered === 'replace_me'
+  );
+};
+console.log(
+  `🤖 AI providers: Gemini=${isRealKey(process.env.GEMINI_API_KEY) ? 'enabled' : 'disabled'} · OpenAI=${
+    isRealKey(process.env.OPENAI_API_KEY) ? 'enabled' : 'disabled'
+  }`
+);
+
 // Security middleware
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }

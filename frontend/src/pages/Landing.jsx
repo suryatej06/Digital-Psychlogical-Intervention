@@ -57,7 +57,7 @@ export default function Landing() {
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <Link
                 to="/register"
-                className="px-8 py-4 rounded-2xl bg-indigo-600 text-white text-lg font-bold shadow-md hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+                className="px-8 py-4 rounded-2xl bg-indigo-600 text-white text-lg font-bold shadow-lg hover:shadow-xl hover:scale-105 hover:-translate-y-0.5 transition-all duration-200"
               >
                 Get started — it's free
               </Link>
@@ -71,7 +71,7 @@ export default function Landing() {
           ) : (
             <Link
               to="/dashboard"
-              className="inline-block px-8 py-4 rounded-2xl bg-indigo-600 text-white text-lg font-bold shadow-md hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+              className="inline-block px-8 py-4 rounded-2xl bg-indigo-600 text-white text-lg font-bold shadow-lg hover:shadow-xl hover:scale-105 hover:-translate-y-0.5 transition-all duration-200"
             >
               Go to dashboard →
             </Link>
@@ -135,7 +135,7 @@ export default function Landing() {
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <Link
                 to="/register"
-                className="px-8 py-4 rounded-2xl bg-indigo-600 text-white text-lg font-bold shadow-md hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+                className="px-8 py-4 rounded-2xl bg-indigo-600 text-white text-lg font-bold shadow-lg hover:shadow-xl hover:scale-105 hover:-translate-y-0.5 transition-all duration-200"
               >
                 Create your account
               </Link>
