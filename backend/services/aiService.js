@@ -1,265 +1,146 @@
-import OpenAI from 'openai';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-const GEMINI_TIMEOUT_MS = 25000;
-
-let openai = null;
-if (process.env.OPENAI_API_KEY) {
-  openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-}
-
-const INTENSITY_SET = new Set(['Neutral', 'Anxious', 'Distressed', 'Crisis']);
-const UI_SET = new Set(['breathing_tool', 'grounding_tool']);
-
-function buildJsonSystemPrompt(alreadySuggestedTools = []) {
-  const already =
-    Array.isArray(alreadySuggestedTools) && alreadySuggestedTools.length > 0
-      ? `Already suggested UI tools this session (do NOT set suggested_ui to any of these again unless the user clearly asks to repeat that specific exercise): ${JSON.stringify(alreadySuggestedTools)}.`
-      : 'No UI tools have been suggested yet in this session.';
-  return `You are a supportive mental health assistant. Your role is to:
-- Provide empathetic and understanding responses
-- Listen actively and validate feelings
-- Offer general support and coping strategies
-- Encourage professional help when distress is severe
-- NEVER diagnose conditions
-- NEVER provide medical advice
-- NEVER prescribe medications
-- Always prioritize user safety and well-being
-
-You MUST respond with valid JSON only — no markdown, no code fences.
-The JSON object must have exactly these keys:
-- "reply" (string): your message to the user, warm and non-judgmental
-- "intensity" (string): exactly one of "Neutral", "Anxious", "Distressed", "Crisis"
-  - Use "Crisis" only if the user expresses imminent self-harm, suicide intent, or immediate danger
-- "suggested_ui" (string or null): exactly one of "breathing_tool", "grounding_tool", or null
-  - Suggest "breathing_tool" when anxiety, panic, or rapid breathing themes dominate
-  - Suggest "grounding_tool" when dissociation, overwhelm, or "can't focus" themes dominate
-  - Otherwise null
-
-${already}
-
-If the user would benefit from a tool but it is in the already-suggested list, set suggested_ui to null unless they explicitly ask for that exercise again.`;
-}
-
-export function normalizeAIJsonPayload(raw, alreadySuggestedTools = []) {
-  const tools = new Set(
-    Array.isArray(alreadySuggestedTools) ? alreadySuggestedTools : []
-  );
-  let reply =
-    typeof raw?.reply === 'string' && raw.reply.trim()
-      ? raw.reply.trim()
-      : 'Thank you for sharing. I am here with you.';
-  let intensity = INTENSITY_SET.has(raw?.intensity) ? raw.intensity : 'Neutral';
-  let suggested_ui = raw?.suggested_ui;
-  if (suggested_ui !== null && suggested_ui !== undefined && suggested_ui !== '') {
-    if (!UI_SET.has(suggested_ui)) suggested_ui = null;
-  } else {
-    suggested_ui = null;
+const getGroqClient = () => {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) {
+    throw new Error('GROQ_API_KEY is missing in environment variables');
   }
-  if (suggested_ui && tools.has(suggested_ui)) suggested_ui = null;
-  return { reply, intensity, suggested_ui };
-}
-
-export const getMockResponseJSON = (userMessage, alreadySuggestedTools = []) => {
-  const m = (userMessage || '').toLowerCase();
-  const suggestedList = Array.isArray(alreadySuggestedTools)
-    ? alreadySuggestedTools
-    : [];
-
-  const crisis =
-    m.includes('suicide') ||
-    m.includes('kill myself') ||
-    m.includes('end my life') ||
-    m.includes('harm myself') ||
-    m.includes('hurt myself') ||
-    m.includes('self harm') ||
-    m.includes('want to die');
-  if (crisis) {
-    return normalizeAIJsonPayload(
-      {
-        reply:
-          "I'm really concerned about what you've shared. Your safety matters most. Please reach out now: 988 (US), Crisis Text Line: text HOME to 741741, or local emergency services. You're not alone.",
-        intensity: 'Crisis',
-        suggested_ui: null,
-      },
-      suggestedList
-    );
-  }
-
-  if (m.includes('anxious') || m.includes('anxiety') || m.includes('panic')) {
-    return normalizeAIJsonPayload(
-      {
-        reply:
-          "I hear how intense anxiety can feel. You're not weak for feeling this way. A slow breathing rhythm can help settle your nervous system — we can walk through it together if you like.",
-        intensity: 'Anxious',
-        suggested_ui: 'breathing_tool',
-      },
-      suggestedList
-    );
-  }
-
-  if (
-    m.includes('dissociat') ||
-    m.includes("can't focus") ||
-    m.includes('cant focus') ||
-    m.includes('numb') ||
-    m.includes('overwhelm') ||
-    m.includes('flooded')
-  ) {
-    return normalizeAIJsonPayload(
-      {
-        reply:
-          "When everything feels like too much, grounding can help you reconnect with the present. We'll go gently — you set the pace.",
-        intensity: 'Distressed',
-        suggested_ui: 'grounding_tool',
-      },
-      suggestedList
-    );
-  }
-
-  if (m.includes('sad') || m.includes('depressed') || m.includes('hopeless')) {
-    return normalizeAIJsonPayload(
-      {
-        reply:
-          "I'm sorry you're carrying this. What you're feeling is valid. If it ever feels unbearable, reaching out to a counselor or crisis line is a brave step — I'm here to listen too.",
-        intensity: 'Distressed',
-        suggested_ui: null,
-      },
-      suggestedList
-    );
-  }
-
-  if (m.includes('stress') || m.includes('stressed')) {
-    return normalizeAIJsonPayload(
-      {
-        reply:
-          'Stress can pile up quietly. Breaking things into smaller steps and naming one thing that helps, even tiny, can make a difference. What feels most pressing right now?',
-        intensity: 'Anxious',
-        suggested_ui: null,
-      },
-      suggestedList
-    );
-  }
-
-  return normalizeAIJsonPayload(
-    {
-      reply:
-        "Thank you for sharing. I'm here to listen and support you. Professional help is available when you're ready — would you like to explore resources or talk through what's on your mind?",
-      intensity: 'Neutral',
-      suggested_ui: null,
-    },
-    suggestedList
-  );
+  return new Groq({ apiKey });
 };
+
+const SYSTEM_PROMPT = `You are Aura, a warm and empathetic mental health support companion for college students. You are NOT a therapist, but you are a compassionate first line of support.
+
+Personality: Warm, non-judgmental, validate feelings, speak naturally.
+
+Capabilities: Empathetic listening, gentle coping strategies (breathing, grounding), identifying crisis.
+
+JSON Response Format:
+{
+  "message": "Your empathetic response string",
+  "emotionTags": ["tag1", "tag2"],
+  "riskLevel": "low" | "moderate" | "high",
+  "trend": "improving" | "stable" | "declining",
+  "escalate": boolean (true if risk is high or self-harm mentioned)
+}
+
+CRITICAL RULES:
+1. NEVER diagnose.
+2. If self-harm/crisis mentioned, set escalate: true and riskLevel: high.
+3. Keep response text (message) warm and conversational.
+4. Respond ONLY with valid JSON.`;
 
 /**
- * @param {string} userMessage
- * @param {Array<{role: string, content: string}>} conversationHistory
- * @param {string[]} alreadySuggestedTools
- * @returns {Promise<{reply: string, intensity: string, suggested_ui: string|null}>}
+ * Get AI response for a message within a conversation history
  */
-export const getAIResponseJSON = async (
-  userMessage,
-  conversationHistory = [],
-  alreadySuggestedTools = []
-) => {
-  if (!process.env.GEMINI_API_KEY) {
-    return getMockResponseJSON(userMessage, alreadySuggestedTools);
-  }
-
-  const systemInstruction = buildJsonSystemPrompt(alreadySuggestedTools);
-
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({
-    model: GEMINI_MODEL,
-    systemInstruction,
-    generationConfig: {
-      temperature: 0.7,
-      maxOutputTokens: 1024,
-      responseMimeType: 'application/json',
-    },
-  });
-
-  const contents = [];
-  for (const msg of conversationHistory) {
-    if (!msg?.content) continue;
-    const role = msg.role === 'assistant' ? 'model' : 'user';
-    contents.push({ role, parts: [{ text: String(msg.content) }] });
-  }
-  contents.push({ role: 'user', parts: [{ text: userMessage }] });
-
+export async function getChatResponse(content, history = []) {
   try {
-    const run = model.generateContent({ contents });
-    const timeout = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Gemini timeout')), GEMINI_TIMEOUT_MS)
-    );
-    const result = await Promise.race([run, timeout]);
-    const text = result.response?.text?.();
-    if (!text) {
-      return getMockResponseJSON(userMessage, alreadySuggestedTools);
+    const formattedHistory = history.map(msg => ({
+      role: msg.role === 'assistant' ? 'assistant' : 'user',
+      content: msg.content
+    }));
+
+    const groq = getGroqClient();
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        ...formattedHistory,
+        { role: 'user', content }
+      ],
+      temperature: 0.7,
+      max_tokens: 500,
+      response_format: { type: 'json_object' }
+    });
+
+    const result = JSON.parse(completion.choices[0]?.message?.content || '{}');
+    
+    // Fallback if AI fails to provide a good message
+    if (!result.message) {
+      result.message = "I hear you, and I'm here to support you. Can you tell me more about what's on your mind?";
     }
-    const parsed = JSON.parse(text);
-    return normalizeAIJsonPayload(parsed, alreadySuggestedTools);
-  } catch (err) {
-    console.error('Gemini JSON error:', err?.message || err);
-    return getMockResponseJSON(userMessage, alreadySuggestedTools);
+    
+    return {
+      message: result.message,
+      emotionTags: result.emotionTags || [],
+      riskLevel: result.riskLevel || 'low',
+      trend: result.trend || 'stable',
+      escalate: result.escalate || false
+    };
+  } catch (error) {
+    console.error('Groq API error:', error?.message || error);
+    return {
+      message: "I'm having a little trouble connecting right now, but I'm still here. If you're in crisis, please call iCall: 9152987821. Otherwise, please try again in a moment.",
+      emotionTags: ['connection-error'],
+      riskLevel: 'low',
+      trend: 'stable',
+      escalate: false
+    };
   }
-};
+}
+
+/**
+ * Analyze a full session history to provide a summary and final risk check
+ */
+export async function analyzeSession(messages = []) {
+  try {
+    if (messages.length === 0) return { summary: "No conversation history.", overallRisk: "low" };
+
+    const conversationText = messages.map(m => `${m.role}: ${m.content}`).join('\n');
+    
+    const groq = getGroqClient();
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        { 
+          role: 'system', 
+          content: 'Analyze the following mental health support session. Provide a concise summary of the student\'s concerns and an overall risk assessment. Respond in JSON format: {"summary": "string", "overallRisk": "low"|"moderate"|"high", "keyConcerns": ["string"]}' 
+        },
+        { role: 'user', content: conversationText }
+      ],
+      response_format: { type: 'json_object' }
+    });
+
+    return JSON.parse(completion.choices[0]?.message?.content || '{}');
+  } catch (error) {
+    console.error('Session analysis error:', error);
+    return { summary: "Analysis failed.", overallRisk: "low" };
+  }
+}
+
+/**
+ * Placeholder for backward compatibility
+ */
+export const getAIResponseJSON = getChatResponse;
 
 /**
  * @param {Array<{type: string, severity: string, score: number|null}>} scores
  * @returns {Promise<string>}
  */
 export const generateResourceTip = async (scores) => {
-  if (!openai) return generateMockTip(scores);
-
   const summary = scores.map((s) => `${s.type}: ${s.severity}`).join(', ');
 
   try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      max_tokens: 80,
-      temperature: 0.7,
+    const groq = getGroqClient();
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
       messages: [
         {
           role: 'system',
           content:
             'You write one warm, supportive sentence for a student mental health platform. ' +
             "You are given the student's current severity levels from recent screenings. " +
-            'Acknowledge how they might be feeling and gently encourage them to explore the resources below. ' +
-            'Never mention specific scores, numbers, or clinical terms. Never be alarming. ' +
-            'Keep it under 35 words. Plain English.',
+            'Acknowledge how they might be feeling and gently encourage them to explore the resources. ' +
+            'Never mention specific scores, numbers, or clinical terms. Keep it under 35 words.'
         },
-        { role: 'user', content: `Student screening results: ${summary}. Write the tip.` },
+        { role: 'user', content: `Student screening results: ${summary}. Write the tip.` }
       ],
+      temperature: 0.7,
+      max_tokens: 100
     });
-    return response.choices[0]?.message?.content?.trim() || generateMockTip(scores);
+
+    return completion.choices[0]?.message?.content?.trim() || "Take a look at these resources we've curated for you.";
   } catch (err) {
     console.error('generateResourceTip error:', err.message);
-    return generateMockTip(scores);
+    return "Here are some resources that might be helpful today.";
   }
-};
-
-const generateMockTip = (scores) => {
-  const order = ['Severe', 'Moderately Severe', 'Moderate', 'Mild', 'Minimal'];
-  const highest = scores.reduce((best, s) => {
-    const rank = order.indexOf(s.severity);
-    const bestRank = order.indexOf(best?.severity || '');
-    return rank !== -1 && (bestRank === -1 || rank < bestRank) ? s : best;
-  }, null);
-
-  const tips = {
-    Severe:
-      "It sounds like things have been really tough lately. These resources are here for you — take it one step at a time.",
-    'Moderately Severe':
-      "You've been carrying a lot recently. We've surfaced some resources that other students have found helpful.",
-    Moderate:
-      "Based on your recent check-in, we've brought some relevant resources to the top for you.",
-    Mild:
-      "Here are some resources curated to match where you're at right now. No pressure — explore what feels right.",
-    Minimal: "You're doing well. These resources are here whenever you want to learn more.",
-  };
-
-  return (highest && tips[highest.severity]) || 'Here are some resources that might be helpful today.';
 };

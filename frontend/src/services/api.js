@@ -28,7 +28,10 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response.data,
   (error) => {
-    if (error.response?.status === 401) {
+    const requestUrl = error.config?.url || '';
+    const isAuthRequest = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/register');
+
+    if (error.response?.status === 401 && !isAuthRequest && localStorage.getItem('token')) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
@@ -41,7 +44,13 @@ api.interceptors.response.use(
 export const authAPI = {
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
-  getProfile: () => api.get('/auth/profile')
+  getProfile: () => api.get('/auth/profile'),
+  logout: () => api.post('/auth/logout')
+};
+
+export const videoAPI = {
+  addToHistory: (meetingCode) => api.post('/video/history', { meeting_code: meetingCode }),
+  getHistory: () => api.get('/video/history')
 };
 
 // Colleges API
@@ -87,15 +96,15 @@ export const chatAPI = {
   getHistory: () => api.get('/chat/history')
 };
 
-// Bookings API
-export const bookingsAPI = {
-  bookSession: (data) => api.post('/bookings/book', data),
-  getStudentBookings: () => api.get('/bookings/student'),
-  getCounselorBookings: (status) => api.get('/bookings/counselor', { params: { status } }),
-  getCounselors: () => api.get('/bookings/counselors'),
-  getAvailability: (counselorId) => api.get(`/bookings/counselors/${counselorId}/availability`),
-  setAvailability: (data) => api.post('/bookings/availability', data),
-  updateStatus: (bookingId, data) => api.put(`/bookings/${bookingId}/status`, data)
+// Connect API (Renamed from Bookings)
+export const connectAPI = {
+  bookSession: (data) => api.post('/connect/book', data),
+  getStudentBookings: () => api.get('/connect/student'),
+  getCounselorBookings: (status) => api.get('/connect/counselor', { params: { status } }),
+  getCounselors: () => api.get('/connect/counselors'),
+  getAvailability: (counselorId) => api.get(`/connect/counselors/${counselorId}/availability`),
+  setAvailability: (data) => api.post('/connect/availability', data),
+  updateStatus: (bookingId, data) => api.put(`/connect/${bookingId}/status`, data)
 };
 
 // Admin API
@@ -108,6 +117,7 @@ export const adminAPI = {
   resolveChatSession: (id) => api.put(`/admin/chat/${id}/resolve`),
   getDashboardStats: () => api.get('/admin/stats')
 };
+
 // Assessment / Check-In API
 export const assessmentAPI = {
   submitFlow: (answers, isOnboarding = false) =>
@@ -116,4 +126,5 @@ export const assessmentAPI = {
   getMyResults: () => api.get('/assessments/results'),
   deleteResult: (id) => api.delete(`/assessments/results/${id}`),
 };
+
 export default api;

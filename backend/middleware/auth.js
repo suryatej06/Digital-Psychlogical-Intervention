@@ -1,24 +1,38 @@
-import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import { hashSessionToken } from '../services/sessionService.js';
 
 /**
  * Authentication middleware
- * Verifies JWT token and attaches user info to request
+ * Verifies opaque session tokens and attaches user info to request
  */
 export const authenticate = async (req, res, next) => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    const authHeader = req.header('Authorization') || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
     
     if (!token) {
       return res.status(401).json({ message: 'No token provided, authorization denied' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const tokenHash = hashSessionToken(token);
+    let user = await User.findOne({
+      sessionTokenHash: tokenHash,
+      sessionExpiresAt: { $gt: new Date() }
+    }).select('-password -sessionTokenHash');
+
+    // Backward-compatible fallback for users who still have a legacy plain token stored.
+    if (!user) {
+      user = await User.findOne({ token }).select('-password -sessionTokenHash');
+    }
     
-    // Verify user still exists and is active
-    const user = await User.findById(decoded.userId).select('-password');
     if (!user || !user.isActive) {
-      return res.status(401).json({ message: 'User not found or inactive' });
+      return res.status(401).json({ message: 'Invalid token or inactive user' });
+    }
+
+    if (user.sessionExpiresAt && user.sessionExpiresAt <= new Date()) {
+      user.clearSession();
+      await user.save();
+      return res.status(401).json({ message: 'Session expired. Please log in again.' });
     }
 
     // Attach user info to request
@@ -31,13 +45,7 @@ export const authenticate = async (req, res, next) => {
 
     next();
   } catch (error) {
-    if (error.name === 'JsonWebTokenError') {
-      return res.status(401).json({ message: 'Invalid token' });
-    }
-    if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({ message: 'Token expired' });
-    }
-    res.status(500).json({ message: 'Authentication error', error: error.message });
+    next(error);
   }
 };
 

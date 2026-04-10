@@ -103,7 +103,7 @@ export default function Resources() {
       if (typeFilter !== 'all') params.append('type', typeFilter);
 
       const res = await api.get(`/resources?${params}`);
-      const raw = res.data?.data ?? res.data ?? [];
+      const raw = res.data ?? [];
       setResources(Array.isArray(raw) ? raw : []);
     } catch {
       setError('Failed to load resources. Please refresh the page.');
@@ -116,7 +116,7 @@ export default function Resources() {
     try {
       setTipLoading(true);
       const res = await api.get('/resources/tip');
-      setTip(res.tip ?? res.data?.tip ?? null);
+      setTip(res.tip ?? null);
     } catch {
       setTip(null);
     } finally {

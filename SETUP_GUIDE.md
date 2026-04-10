@@ -13,7 +13,6 @@ Detailed setup reference for developers picking up this project.
 | `PORT` | Yes | Server port (default: 5000) |
 | `NODE_ENV` | Yes | `development` or `production` |
 | `MONGODB_URI` | Yes | MongoDB connection string |
-| `JWT_SECRET` | Yes | Secret key for JWT signing |
 | `OPENAI_API_KEY` | No | OpenAI key for contextual tips & chatbot (mock used if absent) |
 | `FRONTEND_URL` | Yes | Frontend URL for CORS (default: http://localhost:5173) |
 

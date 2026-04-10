@@ -5,8 +5,8 @@ export default function Navbar() {
   const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  function handleLogout() {
-    logout();
+  async function handleLogout() {
+    await logout();
     navigate('/login');
   }
 
@@ -43,8 +43,8 @@ export default function Navbar() {
                 <Link to="/community" className="px-3 py-1.5 rounded-lg hover:bg-white/10 hover:text-indigo-200 transition-all font-medium">
                   Community
                 </Link>
-                <Link to="/bookings" className="px-3 py-1.5 rounded-lg hover:bg-white/10 hover:text-indigo-200 transition-all font-medium">
-                  Bookings
+                <Link to="/connect" className="px-3 py-1.5 rounded-lg hover:bg-white/10 hover:text-indigo-200 transition-all font-medium">
+                  Connect
                 </Link>
                 <Link to="/chatbot" className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-purple-200 hover:text-white transition-all font-extrabold tracking-wide flex items-center gap-1 shadow-sm">
                   Chatbot ✨
@@ -64,8 +64,8 @@ export default function Navbar() {
                 <Link to="/dashboard" className="px-3 py-1.5 rounded-lg hover:bg-white/10 hover:text-indigo-200 transition-all">
                   Dashboard
                 </Link>
-                <Link to="/bookings" className="px-3 py-1.5 rounded-lg hover:bg-white/10 hover:text-indigo-200 transition-all">
-                  My Sessions
+                <Link to="/connect" className="px-3 py-1.5 rounded-lg hover:bg-white/10 hover:text-indigo-200 transition-all">
+                  Connect
                 </Link>
                 <Link to="/manage-resources" className="px-3 py-1.5 rounded-lg hover:bg-white/10 hover:text-indigo-200 transition-all">
                   Manage Resources

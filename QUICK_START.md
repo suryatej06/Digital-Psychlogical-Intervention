@@ -25,7 +25,6 @@ cd ../frontend && npm install
 PORT=5000
 NODE_ENV=development
 MONGODB_URI=mongodb://localhost:27017/mental-health-platform
-JWT_SECRET=your-random-secret-key-here
 OPENAI_API_KEY=your-openai-key-optional
 FRONTEND_URL=http://localhost:5173
 ```

@@ -27,6 +27,12 @@ const messageSchema = new mongoose.Schema({
     type: String,
     enum: ['Neutral', 'Anxious', 'Distressed', 'Crisis'],
     default: 'Neutral'
+  },
+  metadata: {
+    emotionTags: [String],
+    riskLevel: String,
+    trend: String,
+    escalate: Boolean
   }
 }, {
   timestamps: true

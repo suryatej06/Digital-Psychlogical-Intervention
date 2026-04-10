@@ -50,8 +50,7 @@ router.put('/:bookingId/status',
   [
     param('bookingId').isMongoId(),
     body('status').isIn(['approved', 'rejected', 'completed']),
-    body('notes').optional().isString().trim(),
-    body('meetingUrl').optional({ checkFalsy: true }).isURL()
+    body('notes').optional().isString().trim()
   ],
   validate,
   updateBookingStatus

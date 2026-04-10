@@ -19,7 +19,20 @@ const chatSessionSchema = new mongoose.Schema({
     min: 0,
     max: 100
   },
+  riskLevel: {
+    type: String,
+    enum: ['low', 'moderate', 'high'],
+    default: 'low'
+  },
+  emotionTags: {
+    type: [String],
+    default: []
+  },
   isFlagged: {
+    type: Boolean,
+    default: false
+  },
+  flaggedForReview: {
     type: Boolean,
     default: false
   },
@@ -38,8 +51,19 @@ const chatSessionSchema = new mongoose.Schema({
   },
   suggestedToolsThisSession: {
     type: [String],
-    default: () => []
-  }
+    default: []
+  },
+  sessionSummary: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null
+  },
+  closedAt: {
+    type: Date
+  },
+  messages: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Message'
+  }]
 }, {
   timestamps: true
 });
@@ -47,6 +71,7 @@ const chatSessionSchema = new mongoose.Schema({
 // Indexes
 chatSessionSchema.index({ userId: 1, createdAt: -1 });
 chatSessionSchema.index({ collegeId: 1, isFlagged: 1 });
+chatSessionSchema.index({ collegeId: 1, flaggedForReview: 1 });
 
 const ChatSession = mongoose.model('ChatSession', chatSessionSchema);
 

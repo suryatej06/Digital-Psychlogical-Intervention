@@ -11,7 +11,7 @@ Featuring a modern **Tailwind frosted-glass (glassmorphism)** aesthetic, the pla
 - **Interactive Progress Dashboard**: Visualized wellbeing trends using `recharts` area graphs, translating raw clinical scores into friendly, color-coded health labels.
 - **Multi-Tenant Architecture**: College-based data isolation
 - **Role-Based Access Control**: Tailored dashboards for Student, Counselor, and Admin roles
-- **Authentication**: JWT-based secure authentication
+- **Authentication**: Secure bcrypt-backed password authentication with server-side session tokens
 - **Smart Resource Hub**: AI-driven media recommendations dynamically sorted based on the user's latest check-in severities (powered by OpenAI). Features interactive, animated Breathing and Grounding exercise widgets. Counselors and Admins share a dedicated, grid-based Resource Management Hub.
 - **Community Forum**: Anonymous posting, nested comment threads (up to depth 3) with `@mentions`, and moderation.
 - **AI Chatbot**: **Gemini-powered** mental health support utilizing structured JSON responses, real-time risk detection, session intensity tracking, and interactive therapeutic widgets rendered directly in the chat.
@@ -22,7 +22,7 @@ Featuring a modern **Tailwind frosted-glass (glassmorphism)** aesthetic, the pla
 ### Security & Safety Features
 - **Automated Crisis Safety Triggers**: Backend isolates self-harm indicators (e.g., PHQ-9 Q9) and automatically flags `needsIntervention` to alert Counselors/Admins. Chatbot sessions automatically deploy a pulsing `CrisisInterventionBanner` when acute risk is detected.
 - Password hashing with bcrypt
-- JWT token authentication
+- Opaque session token authentication with server-side expiry
 - Multi-tenant data isolation with strict enforcement
 - Input validation and sanitization (express-validator)
 - Rate limiting on all endpoints (helmet, express-rate-limit)
@@ -62,7 +62,6 @@ cp .env.example .env
 PORT=5000
 NODE_ENV=development
 MONGODB_URI=mongodb://localhost:27017/mental-health-platform
-JWT_SECRET=your-super-secret-jwt-key-change-in-production
 GEMINI_API_KEY=your-gemini-api-key-here
 GEMINI_MODEL=gemini-2.0-flash
 OPENAI_API_KEY=your-openai-api-key-here
@@ -317,7 +316,7 @@ mental-health-platform/
 ## 🔒 Security Considerations
 
 - **Never commit `.env` files** - They contain sensitive information
-- **Change JWT_SECRET** in production
+- Rotate session credentials and API keys in production
 - **Use HTTPS** in production
 - **Implement rate limiting** on all endpoints
 - **Validate all inputs** on both frontend and backend
@@ -354,7 +353,7 @@ To test the platform:
 
 2. **Configure environment:**
    - Copy `.env.example` to `.env` in both backend and frontend
-   - Update MongoDB URI, JWT_SECRET, and API Keys.
+   - Update MongoDB URI and API keys.
 
 3. **Start MongoDB:**
    ```bash
@@ -392,7 +391,7 @@ To test the platform:
 ### Backend Deployment
 1. Set `NODE_ENV=production` in `.env`
 2. Update `MONGODB_URI` to production database
-3. Set strong `JWT_SECRET`
+3. Use secure, rotating server credentials and API keys
 4. Run `npm run seed` on production (or ensure admin exists)
 5. Deploy to platforms like Heroku, Railway, or AWS
 

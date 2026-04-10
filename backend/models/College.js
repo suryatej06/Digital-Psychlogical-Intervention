@@ -26,9 +26,6 @@ const collegeSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for faster queries
-collegeSchema.index({ code: 1 });
-
 const College = mongoose.model('College', collegeSchema);
 
 export default College;

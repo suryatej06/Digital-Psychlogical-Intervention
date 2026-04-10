@@ -14,9 +14,11 @@ import Progress from './pages/Progress';
 import Resources from './pages/Resources';
 import Community from './pages/Community';
 import Chatbot from './pages/Chatbot';
-import Bookings from './pages/Bookings';
+import Connect from './pages/Connect';
 import AdminPanel from './pages/AdminPanel';
 import ManageResources from './components/ManageResources';
+import VideoMeetComponent from './pages/VideoMeet';
+import JoinLobby from './pages/JoinLobby';
 
 export default function App() {
   return (
@@ -42,10 +44,10 @@ export default function App() {
 
             {/* Student + Counselor shared */}
             <Route
-              path="/bookings"
+              path="/connect"
               element={
                 <ProtectedRoute allowedRoles={['student', 'counselor']}>
-                  <Bookings />
+                  <Connect />
                 </ProtectedRoute>
               }
             />
@@ -56,6 +58,26 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={['student', 'counselor']}>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Video Calling Join Lobby */}
+            <Route
+              path="/video/join"
+              element={
+                <ProtectedRoute allowedRoles={['student', 'counselor']}>
+                  <JoinLobby />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Video Calling Session */}
+            <Route
+              path="/video/:room"
+              element={
+                <ProtectedRoute allowedRoles={['student', 'counselor']}>
+                  <VideoMeetComponent />
                 </ProtectedRoute>
               }
             />

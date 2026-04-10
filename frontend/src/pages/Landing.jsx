@@ -29,7 +29,7 @@ const FEATURES = [
   { icon: '📚', title: 'Smart resource hub', desc: 'Resources personalised to your latest assessment results.', color: 'from-pink-400 to-rose-500' },
   { icon: '👥', title: 'Community forum', desc: 'Anonymous peer support — share and be heard.', color: 'from-indigo-400 to-blue-500' },
   { icon: '🗓️', title: 'Counselling bookings', desc: 'Schedule one-on-one sessions at times that work for you.', color: 'from-violet-400 to-indigo-500' },
-  { icon: '🔒', title: 'Private & secure', desc: 'Your data stays within your college. JWT-secured, always.', color: 'from-teal-400 to-indigo-400' },
+  { icon: '🔒', title: 'Private & secure', desc: 'Your data stays within your college using encrypted passwords and secure session-based access.', color: 'from-teal-400 to-indigo-400' },
 ];
 
 export default function Landing() {

@@ -22,15 +22,16 @@ export const AuthProvider = ({ children }) => {
       const storedUser = localStorage.getItem('user');
 
       if (storedToken && storedUser) {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
         try {
+          const parsedUser = JSON.parse(storedUser);
+          setToken(storedToken);
+          setUser(parsedUser);
           const response = await authAPI.getProfile();
           setUser(response.user);
           localStorage.setItem('user', JSON.stringify(response.user));
         } catch (error) {
           console.error('Failed to fetch profile:', error);
-          logout();
+          clearLocalAuth();
         }
       }
       setLoading(false);
@@ -38,6 +39,13 @@ export const AuthProvider = ({ children }) => {
 
     initAuth();
   }, []);
+
+  const clearLocalAuth = () => {
+    setToken(null);
+    setUser(null);
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+  };
 
   const login = async (email, password) => {
     try {
@@ -77,11 +85,16 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    setToken(null);
-    setUser(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+  const logout = async () => {
+    try {
+      if (localStorage.getItem('token')) {
+        await authAPI.logout();
+      }
+    } catch (error) {
+      console.error('Failed to invalidate session on server:', error);
+    } finally {
+      clearLocalAuth();
+    }
   };
 
   // Exposed so Onboarding can update user after completing flow

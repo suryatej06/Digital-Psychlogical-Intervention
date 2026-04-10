@@ -1,236 +1,194 @@
-import ChatSession from '../models/ChatSession.js';
-import Message from '../models/Message.js';
-import { getAIResponseJSON, getMockResponseJSON } from '../services/aiService.js';
-import {
-  scanForRisk,
-  calculateRiskScore,
-  getCrisisResponse,
-  exceedsRiskThreshold
-} from '../services/riskDetection.js';
-
-function sessionPayload(session, extra = {}) {
-  return {
-    id: session._id,
-    riskScore: session.riskScore,
-    isFlagged: session.isFlagged,
-    status: session.status,
-    sessionIntensity: session.sessionIntensity || 'Neutral',
-    ...extra
-  };
-}
+import ChatSession from "../models/ChatSession.js";
+import Message from "../models/Message.js";
+import User from "../models/User.js";
+import { getChatResponse, analyzeSession } from "../services/aiService.js";
 
 /**
- * Create or get active chat session
+ * Get the active session for the current user or create a new one.
  */
 export const getOrCreateSession = async (req, res, next) => {
   try {
+    const userId = req.user.userId;
+
     let session = await ChatSession.findOne({
-      userId: req.user.userId,
-      status: 'active'
-    });
+      userId,
+      status: "active"
+    }).populate("messages");
 
     if (!session) {
       session = await ChatSession.create({
-        userId: req.user.userId,
+        userId,
         collegeId: req.user.collegeId,
-        riskScore: 0
+        status: "active",
+        riskLevel: "low",
+        emotionTags: [],
+        messages: []
       });
     }
 
-    const messages = await Message.find({ sessionId: session._id })
-      .sort({ createdAt: 1 });
-
-    res.json({
-      session: sessionPayload(session),
-      messages
-    });
-  } catch (error) {
-    next(error);
+    res.json({ success: true, session, messages: session.messages || [] });
+  } catch (err) {
+    console.error("getOrCreateSession error:", err);
+    next(err);
   }
 };
 
 /**
- * Send message to chatbot
+ * Send a message to the AI and get a response.
  */
 export const sendMessage = async (req, res, next) => {
   try {
-    const { content } = req.body;
+    const { content } = req.body; // Match existing route body field
+    const userId = req.user.userId;
 
-    if (!content || !content.trim()) {
-      return res.status(400).json({ message: 'Message content is required' });
+    if (!content?.trim()) {
+      return res.status(400).json({ success: false, message: "Message cannot be empty" });
     }
 
-    let session = await ChatSession.findOne({
-      userId: req.user.userId,
-      status: 'active'
-    });
+    // Get or validate session
+    let session = await ChatSession.findOne({ userId, status: "active" });
 
     if (!session) {
       session = await ChatSession.create({
-        userId: req.user.userId,
+        userId,
         collegeId: req.user.collegeId,
-        riskScore: 0
+        status: "active",
+        riskLevel: "low",
+        emotionTags: [],
+        messages: []
       });
     }
 
-    const riskScan = scanForRisk(content);
-
-    const priorRaw = await Message.find({ sessionId: session._id })
-      .sort({ createdAt: -1 })
-      .limit(10)
-      .lean();
-    const history = priorRaw.reverse().map((msg) => ({
-      role: msg.role,
-      content: msg.content
-    }));
-
-    const userMessage = await Message.create({
+    // Save user message
+    const userMsg = await Message.create({
       sessionId: session._id,
-      role: 'user',
-      content: content.trim(),
-      riskKeywords: riskScan.keywords
+      role: "user",
+      content: content.trim()
     });
+    session.messages.push(userMsg._id);
 
-    let replyText;
-    let intensity = 'Neutral';
-    let suggested_ui = null;
+    // Build conversation history for context (last 12 messages)
+    const history = await Message.find({ sessionId: session._id })
+      .sort({ createdAt: -1 })
+      .limit(12)
+      .lean();
+    
+    // Reverse to get chronological order for AI
+    const conversationHistory = history.reverse();
 
-    if (riskScan.level === 'crisis') {
-      replyText = getCrisisResponse();
-      intensity = 'Crisis';
-      suggested_ui = null;
-      session.riskScore = 100;
-      session.sessionIntensity = 'Crisis';
+    // Call Groq AI
+    const aiResult = await getChatResponse(content.trim(), conversationHistory);
+
+    // Save AI response
+    const aiMsg = await Message.create({
+      sessionId: session._id,
+      role: "assistant",
+      content: aiResult.message,
+      metadata: {
+        emotionTags: aiResult.emotionTags,
+        riskLevel: aiResult.riskLevel,
+        trend: aiResult.trend,
+        escalate: aiResult.escalate
+      }
+    });
+    session.messages.push(aiMsg._id);
+
+    // Update session risk level
+    const riskOrder = { low: 0, moderate: 1, high: 2 };
+    const currentRisk = riskOrder[session.riskLevel] ?? 0;
+    const newRisk = riskOrder[aiResult.riskLevel] ?? 0;
+
+    if (newRisk >= currentRisk) {
+      session.riskLevel = aiResult.riskLevel;
+    }
+
+    // Merge emotion tags (deduplicated)
+    const allTags = new Set([...session.emotionTags, ...(aiResult.emotionTags || [])]);
+    session.emotionTags = [...allTags];
+
+    // Flag for admin intervention if high risk or AI explicitly requested escalation
+    if (aiResult.escalate || aiResult.riskLevel === 'high') {
+      session.flaggedForReview = true;
       session.isFlagged = true;
-      session.flagReason = 'Crisis keywords detected';
-    } else {
-      session.riskScore = calculateRiskScore(content, session.riskScore);
+      session.flagReason = "High risk / distress detected by Aura AI";
 
-      const fromSession = session.suggestedToolsThisSession || [];
-      const fromHistory = priorRaw
-        .filter((m) => m.role === 'assistant' && m.suggestedUi)
-        .map((m) => m.suggestedUi);
-      const alreadySuggestedTools = [...new Set([...fromSession, ...fromHistory])].filter(Boolean);
-
-      let parsed;
-      try {
-        parsed = await getAIResponseJSON(
-          content.trim(),
-          history,
-          alreadySuggestedTools
-        );
-      } catch {
-        parsed = getMockResponseJSON(content.trim(), alreadySuggestedTools);
-      }
-
-      replyText = parsed.reply;
-      intensity = parsed.intensity;
-      suggested_ui = parsed.suggested_ui;
-      session.sessionIntensity = intensity;
-
-      if (intensity === 'Crisis') {
-        session.isFlagged = true;
-        session.riskScore = 100;
-        if (!session.flagReason) {
-          session.flagReason = 'AI assessed crisis intensity';
-        } else if (!session.flagReason.includes('AI assessed crisis')) {
-          session.flagReason = `${session.flagReason}; AI assessed crisis intensity`;
-        }
-      }
-
-      const toolsSoFar = session.suggestedToolsThisSession || [];
-      if (suggested_ui && !toolsSoFar.includes(suggested_ui)) {
-        session.suggestedToolsThisSession = [...toolsSoFar, suggested_ui];
-      }
-
-      if (exceedsRiskThreshold(session.riskScore)) {
-        session.isFlagged = true;
-        if (!session.flagReason) {
-          session.flagReason = 'Risk score threshold exceeded';
-        }
-      }
+      // Also flag user account for counsellor visibility (using existing field or logic)
+      await User.findByIdAndUpdate(userId, { needsIntervention: true });
     }
 
     await session.save();
 
-    const assistantMessage = await Message.create({
-      sessionId: session._id,
-      role: 'assistant',
-      content: replyText,
-      suggestedUi: suggested_ui,
-      intensity
-    });
-
-    const suggestion = exceedsRiskThreshold(session.riskScore)
-      ? 'We recommend speaking with a counselor. Would you like to book a session?'
-      : null;
-
     res.json({
-      message: assistantMessage,
-      intensity,
-      suggested_ui,
-      session: sessionPayload(session, { suggestion })
+      success: true,
+      message: aiMsg,
+      session: {
+        _id: session._id,
+        riskLevel: session.riskLevel,
+        emotionTags: session.emotionTags,
+        flaggedForReview: session.flaggedForReview
+      }
     });
-  } catch (error) {
-    next(error);
+
+  } catch (err) {
+    console.error("sendMessage error:", err);
+    next(err);
   }
 };
 
 /**
- * Close chat session
+ * Close the session and perform final analysis.
  */
 export const closeSession = async (req, res, next) => {
   try {
-    const session = await ChatSession.findOne({
-      _id: req.params.sessionId,
-      userId: req.user.userId
-    });
+    const { sessionId } = req.params;
+    const userId = req.user.userId;
+
+    const session = await ChatSession.findOne({ _id: sessionId, userId })
+      .populate("messages");
 
     if (!session) {
-      return res.status(404).json({ message: 'Session not found' });
+      return res.status(404).json({ success: false, message: "Session not found" });
     }
 
-    session.status = 'closed';
+    // Run session-level analysis
+    const analysis = await analyzeSession(session.messages);
+
+    session.status = "closed";
+    session.closedAt = new Date();
+    session.sessionSummary = analysis;
+    
+    if (analysis.overallRisk === "high") {
+      session.flaggedForReview = true;
+      session.isFlagged = true;
+    }
+
     await session.save();
 
-    res.json({ message: 'Session closed successfully' });
-  } catch (error) {
-    next(error);
+    res.json({ success: true, message: "Session closed", summary: analysis });
+  } catch (err) {
+    console.error("closeSession error:", err);
+    next(err);
   }
 };
 
 /**
- * Get chat history
+ * Get session history for the current user.
  */
 export const getChatHistory = async (req, res, next) => {
   try {
-    const sessions = await ChatSession.find({
-      userId: req.user.userId
-    })
+    const userId = req.user.userId;
+
+    const sessions = await ChatSession.find({ userId })
       .sort({ createdAt: -1 })
-      .limit(20);
+      .limit(10)
+      .populate({
+        path: "messages",
+        options: { sort: { createdAt: 1 } }
+      });
 
-    const sessionsWithMessages = await Promise.all(
-      sessions.map(async (session) => {
-        const messages = await Message.find({ sessionId: session._id })
-          .sort({ createdAt: 1 })
-          .limit(5);
-
-        return {
-          id: session._id,
-          riskScore: session.riskScore,
-          isFlagged: session.isFlagged,
-          status: session.status,
-          sessionIntensity: session.sessionIntensity || 'Neutral',
-          createdAt: session.createdAt,
-          messageCount: await Message.countDocuments({ sessionId: session._id }),
-          preview: messages
-        };
-      })
-    );
-
-    res.json({ sessions: sessionsWithMessages });
-  } catch (error) {
-    next(error);
+    res.json({ success: true, sessions });
+  } catch (err) {
+    console.error("getChatHistory error:", err);
+    next(err);
   }
 };

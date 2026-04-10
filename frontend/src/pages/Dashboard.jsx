@@ -1,7 +1,7 @@
 // frontend/src/pages/Dashboard.jsx
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { assessmentAPI } from '../services/api';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -69,6 +69,12 @@ const Icons = {
       <line x1="3" y1="10" x2="21" y2="10" />
     </svg>
   ),
+  Video: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 text-white">
+      <polygon points="23 7 16 12 23 17 23 7" />
+      <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+    </svg>
+  ),
   Progress: () => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 text-white">
       <line x1="18" y1="20" x2="18" y2="10" />
@@ -97,7 +103,8 @@ const STUDENT_CARDS = [
   { to: '/resources', Icon: Icons.Resources, title: 'Resources', desc: 'Personalised articles & exercises', color: 'from-purple-400 to-pink-500' },
   { to: '/community', Icon: Icons.Community, title: 'Community', desc: 'Connect with peers anonymously', color: 'from-pink-400 to-rose-500' },
   { to: '/chatbot', Icon: Icons.Chat, title: 'AI Support', desc: 'Chat with your 24/7 assistant', color: 'from-indigo-400 to-blue-500' },
-  { to: '/bookings', Icon: Icons.Bookings, title: 'Bookings', desc: 'Schedule a counselling session', color: 'from-violet-400 to-indigo-500' },
+  { to: '/connect', Icon: Icons.Bookings, title: 'Connect', desc: 'Secure video session with a counsellor', color: 'from-violet-400 to-indigo-500' },
+  { to: '/video/join', Icon: Icons.Video, title: 'Join Video', desc: 'Join a virtual session', color: 'from-blue-400 to-cyan-500' },
   { to: '/progress', Icon: Icons.Progress, title: 'My Progress', desc: 'Track your wellbeing over time', color: 'from-teal-400 to-indigo-400' },
 ];
 
@@ -105,6 +112,7 @@ const STUDENT_CARDS = [
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [results, setResults] = useState([]);
   const [loadingRes, setLoadingRes] = useState(true);
@@ -260,7 +268,7 @@ export default function Dashboard() {
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-400 to-indigo-500 flex items-center justify-center mb-6 shadow-md">
                 <Icons.Bookings />
               </div>
-              <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Bookings & Schedule</h2>
+              <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Network & Schedule</h2>
               <p className="text-gray-500 text-sm leading-relaxed mb-8 max-w-sm flex-1">
                 Review incoming booking requests, set your availability, and manage your upcoming sessions.
               </p>
@@ -270,6 +278,22 @@ export default function Dashboard() {
               >
                 View my bookings →
               </Link>
+            </div>
+
+            <div className="bg-white/60 backdrop-blur-xl border border-white/50 rounded-3xl p-8 shadow-xl flex flex-col items-start">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center mb-6 shadow-md">
+                <Icons.Video />
+              </div>
+              <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Video Sessions</h2>
+              <p className="text-gray-500 text-sm leading-relaxed mb-8 max-w-sm flex-1">
+                Start a secure video counseling session with a student.
+              </p>
+              <button
+                onClick={() => navigate('/video/join')}
+                className="inline-block px-8 py-3 rounded-2xl bg-indigo-600 text-white font-bold shadow-md hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+              >
+                Open video lobby →
+              </button>
             </div>
 
             <div className="bg-white/60 backdrop-blur-xl border border-white/50 rounded-3xl p-8 shadow-xl flex flex-col items-start">
@@ -318,7 +342,7 @@ export default function Dashboard() {
                 Add, edit, or remove resources from the student-facing library.
               </p>
               <Link
-                to="/resources"
+                to="/manage-resources"
                 className="inline-block px-6 py-3 rounded-2xl bg-white/60 backdrop-blur-xl border border-white/50 text-indigo-700 font-bold shadow-sm hover:bg-white transition-all duration-200"
               >
                 Manage resources →

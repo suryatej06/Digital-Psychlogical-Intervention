@@ -38,9 +38,10 @@ const bookingSchema = new mongoose.Schema({
   studentNotes: {
     type: String
   },
-  meetingUrl: {
+  meetingCode: {
     type: String,
-    trim: true
+    trim: true,
+    uppercase: true
   }
 }, {
   timestamps: true

@@ -50,6 +50,18 @@ const userSchema = new mongoose.Schema({
     phone: String,
     bio: String,
     specialization: String // For counselors
+  },
+  token: {
+    type: String,
+    index: true
+  },
+  sessionTokenHash: {
+    type: String,
+    index: true
+  },
+  sessionExpiresAt: {
+    type: Date,
+    index: true
   }
 }, {
   timestamps: true
@@ -68,6 +80,12 @@ userSchema.pre('save', async function(next) {
 // Compare password method
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
+};
+
+userSchema.methods.clearSession = function() {
+  this.token = undefined;
+  this.sessionTokenHash = undefined;
+  this.sessionExpiresAt = undefined;
 };
 
 const User = mongoose.model('User', userSchema);

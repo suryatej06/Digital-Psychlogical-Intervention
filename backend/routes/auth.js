@@ -1,9 +1,9 @@
 import express from 'express';
 import { body } from 'express-validator';
-import { register, login, getProfile } from '../controllers/authController.js';
+import { register, login, getProfile, logout } from '../controllers/authController.js';
 import { authenticate } from '../middleware/auth.js';
 import { authRateLimiter } from '../middleware/security.js';
-import { validate, validationRules } from '../middleware/validation.js';
+import { validate } from '../middleware/validation.js';
 
 const router = express.Router();
 
@@ -14,7 +14,7 @@ router.post('/register',
     body('name').isLength({ min: 2, max: 100 }).trim(),
     body('email').isEmail().normalizeEmail(),
     body('password').isLength({ min: 6 }),
-    body('collegeId').isMongoId(),
+    body('collegeId').optional().isMongoId(),
     body('role').optional().isIn(['student', 'counselor'])
   ],
   validate,
@@ -33,5 +33,6 @@ router.post('/login',
 );
 
 router.get('/profile', authenticate, getProfile);
+router.post('/logout', authenticate, logout);
 
 export default router;

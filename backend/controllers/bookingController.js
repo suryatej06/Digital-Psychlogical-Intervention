@@ -2,6 +2,24 @@ import mongoose from 'mongoose';
 import Booking from '../models/Booking.js';
 import User from '../models/User.js';
 
+const MEETING_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+const generateMeetingCode = async () => {
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    let code = '';
+    for (let i = 0; i < 6; i += 1) {
+      code += MEETING_CODE_ALPHABET[Math.floor(Math.random() * MEETING_CODE_ALPHABET.length)];
+    }
+
+    const exists = await Booking.exists({ meetingCode: code });
+    if (!exists) {
+      return code;
+    }
+  }
+
+  throw new Error('Unable to generate a unique meeting code');
+};
+
 /**
  * Set counselor availability (Counselor only)
  */
@@ -186,7 +204,7 @@ export const getCounselors = async (req, res, next) => {
  */
 export const updateBookingStatus = async (req, res, next) => {
   try {
-    const { status, notes, meetingUrl } = req.body;
+    const { status, notes } = req.body;
     const { bookingId } = req.params;
 
     if (!['approved', 'rejected', 'completed'].includes(status)) {
@@ -204,7 +222,9 @@ export const updateBookingStatus = async (req, res, next) => {
 
     booking.status = status;
     if (notes !== undefined) booking.notes = notes;
-    if (meetingUrl !== undefined) booking.meetingUrl = meetingUrl;
+    if (status === 'approved' && !booking.meetingCode) {
+      booking.meetingCode = await generateMeetingCode();
+    }
     await booking.save();
 
     res.json({

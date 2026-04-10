@@ -1,4 +1,5 @@
 import express from 'express';
+import { createServer } from 'node:http';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -11,9 +12,11 @@ import collegeRoutes from './routes/colleges.js';
 import resourceRoutes from './routes/resources.js';
 import postRoutes from './routes/posts.js';
 import chatRoutes from './routes/chat.js';
-import bookingRoutes from './routes/bookings.js';
+import connectRoutes from './routes/connect.js';
 import adminRoutes from './routes/admin.js';
 import assessmentRoutes from './routes/assessments.js';
+import videoRoutes from './routes/video.js';
+import { connectToSocket } from './services/socketManager.js';
 
 dotenv.config();
 
@@ -33,11 +36,7 @@ const isRealKey = (v) => {
     lowered === 'replace_me'
   );
 };
-console.log(
-  `🤖 AI providers: Gemini=${isRealKey(process.env.GEMINI_API_KEY) ? 'enabled' : 'disabled'} · OpenAI=${
-    isRealKey(process.env.OPENAI_API_KEY) ? 'enabled' : 'disabled'
-  }`
-);
+
 
 // Security middleware
 app.use(helmet({
@@ -67,9 +66,11 @@ app.use('/api/colleges', collegeRoutes);
 app.use('/api/resources', resourceRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/chat', chatRoutes);
-app.use('/api/bookings', bookingRoutes);
+app.use('/api/connect', connectRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/assessments', assessmentRoutes); // ← ADD THIS
+app.use('/api/video', videoRoutes);
+app.use('/api/v1/users', videoRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -87,10 +88,12 @@ app.use(errorHandler);
 // Database connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/mental-health-platform')
   .then(() => {
-    console.log('✅ MongoDB connected');
+    console.log(`✅ MongoDB connected to ${process.env.MONGODB_URI }}`);
     const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
+    const server = createServer(app);
+    connectToSocket(server);
+    server.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT} $`);
     });
   })
   .catch((error) => {

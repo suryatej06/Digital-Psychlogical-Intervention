@@ -1,362 +1,281 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Sparkles, X, Brain, Heart, AlertTriangle } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { chatAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import CrisisInterventionBanner from '../components/CrisisInterventionBanner';
-import { BreathingExercise, GroundingExercise } from '../components/ExerciseWidgets';
 
-function intensityDotClass(intensity) {
-  switch (intensity) {
-    case 'Anxious':
-      return 'bg-amber-400';
-    case 'Distressed':
-      return 'bg-orange-500';
-    case 'Crisis':
-      return 'bg-red-600';
-    default:
-      return 'bg-emerald-500';
-  }
-}
+const formatTime = (date) => {
+  return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
 
-function intensityLabel(intensity) {
-  switch (intensity) {
-    case 'Anxious':
-      return 'Elevated concern';
-    case 'Distressed':
-      return 'High distress';
-    case 'Crisis':
-      return 'Crisis level';
-    default:
-      return 'Settled';
-  }
-}
+const ChatMessage = ({ msg }) => {
+  const isUser = msg.role === 'user';
+  const emotions = msg.metadata?.emotionTags || [];
 
-const Chatbot = () => {
+  return (
+    <div className={`flex w-full mb-6 ${isUser ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
+      <div className={`max-w-[85%] sm:max-w-[70%] flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
+        <div 
+          className={`relative p-4 rounded-3xl shadow-lg backdrop-blur-md border ${
+            isUser 
+              ? 'bg-indigo-600/90 text-white border-white/10 rounded-br-sm shadow-indigo-500/10' 
+              : 'bg-white/5 text-slate-100 border-white/5 rounded-bl-sm shadow-black/20'
+          }`}
+        >
+          <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+          
+          {!isUser && emotions.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-3">
+              {emotions.map((tag, i) => (
+                <span key={i} className="text-[10px] font-bold uppercase tracking-wider bg-white/10 text-indigo-300 px-2 py-0.5 rounded-full border border-white/5">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="flex items-center gap-2 mt-1.5 px-1">
+          <span className="text-[10px] text-slate-500 font-medium">
+            {formatTime(msg.createdAt)}
+          </span>
+          {isUser && (
+            <div className="flex gap-0.5">
+              <div className="w-1 h-1 rounded-full bg-indigo-500/50"></div>
+              <div className="w-1 h-1 rounded-full bg-indigo-500/70"></div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default function Chatbot() {
+  const { user } = useAuth();
   const [session, setSession] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [inputMessage, setInputMessage] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [sessionLoading, setSessionLoading] = useState(true);
-  const [currentIntensity, setCurrentIntensity] = useState('Neutral');
-  const messagesEndRef = useRef(null);
+  const [input, setInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const bottomRef = useRef(null);
+  const inputRef = useRef(null);
 
-  useEffect(() => {
-    loadSession();
+  const loadSession = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await chatAPI.getSession();
+      setSession(res.session);
+      if (res.messages) {
+        setMessages(res.messages.map(m => ({
+          ...m,
+          createdAt: new Date(m.createdAt)
+        })));
+      }
+    } catch (error) {
+      console.error('Failed to load chat session:', error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    loadSession();
+  }, [loadSession]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isTyping]);
 
-  const loadSession = async () => {
+  const handleSend = async (e) => {
+    if (e) e.preventDefault();
+    const content = input.trim();
+    if (!content || isTyping) return;
+
+    const optimisticId = Date.now().toString();
+    const userMsg = {
+      _id: optimisticId,
+      role: 'user',
+      content,
+      createdAt: new Date()
+    };
+
+    setInput('');
+    setMessages(prev => [...prev, userMsg]);
+    setIsTyping(true);
+
     try {
-      setSessionLoading(true);
-      const response = await chatAPI.getSession();
-      setSession(response.session);
-      setCurrentIntensity(response.session?.sessionIntensity || 'Neutral');
-      setMessages(response.messages ?? []);
+      const res = await chatAPI.sendMessage(content);
+      if (res.success) {
+        setSession(prev => ({ ...prev, ...res.session }));
+        const aiMsg = {
+          ...res.message,
+          createdAt: new Date(res.message.createdAt)
+        };
+        setMessages(prev => [...prev, aiMsg]);
+      }
     } catch (error) {
-      console.error('Failed to load session:', error);
+      console.error('Failed to send message:', error);
+      setMessages(prev => [...prev, {
+        _id: Date.now().toString(),
+        role: 'assistant',
+        content: "I'm sorry, I'm having trouble connecting to my brain right now. Please try again in a moment.",
+        createdAt: new Date()
+      }]);
     } finally {
-      setSessionLoading(false);
+      setIsTyping(false);
     }
   };
 
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    if (!inputMessage.trim() || loading) return;
-
-    const userMessage = inputMessage.trim();
-    setInputMessage('');
-    setLoading(true);
-
-    // Optimistic UI update
-    const tempUserMessage = {
-      _id: Date.now(),
-      role: 'user',
-      content: userMessage,
-      createdAt: new Date()
-    };
-    setMessages((prev) => [...prev, tempUserMessage]);
+  const handleCloseSession = async () => {
+    if (!session?._id) return;
+    if (!window.confirm("Ending this session will archive our current conversation and generate a summary. Ready?")) return;
 
     try {
-      const response = await chatAPI.sendMessage(userMessage);
-      const assistantMessage = response.message;
-
-      setMessages((prev) => [
-        ...prev.filter(m => m._id !== tempUserMessage._id),
-        {
-          _id: Date.now(),
-          role: 'user',
-          content: userMessage,
-          createdAt: new Date()
-        },
-        assistantMessage
-      ]);
-
-      if (response.session) {
-        setSession(response.session);
-      }
-      const nextIntensity = response.intensity ?? response.session?.sessionIntensity ?? 'Neutral';
-      setCurrentIntensity(nextIntensity);
+      setLoading(true);
+      await chatAPI.closeSession(session._id);
+      setMessages([]);
+      await loadSession();
     } catch (error) {
-      console.error('Failed to send message:', error);
-      alert(error.response?.data?.message || 'Failed to send message');
-      setMessages((prev) => prev.filter(m => m._id !== tempUserMessage._id));
+      console.error('Failed to close session:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCloseSession = async () => {
-    if (session && window.confirm('Are you sure you want to close this session?')) {
-      try {
-        await chatAPI.closeSession(session.id);
-        setSession(null);
-        setMessages([]);
-        loadSession();
-      } catch (error) {
-        console.error('Failed to close session:', error);
-      }
-    }
-  };
-
-  // --- UI Render ---
-
-  const showCrisisBanner =
-    currentIntensity === 'Crisis' ||
-    (session && /crisis/i.test(session.flagReason || ''));
-
-  if (sessionLoading) {
+  if (loading && messages.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[600px] max-w-4xl mx-auto">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-          className="h-10 w-10 rounded-full border-2 border-indigo-500 border-t-transparent"
-        />
+      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-slate-400 font-medium animate-pulse">Connecting to Aura...</p>
+        </div>
       </div>
     );
   }
 
+  const riskLevel = session?.riskLevel || 'low';
+  const showCrisis = riskLevel === 'high' || session?.flaggedForReview;
+
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative">
-
-      {/* Background Floating Orbs */}
-      <motion.div
-        animate={{ x: [0, 20, 0], y: [0, -15, 0] }}
-        transition={{ repeat: Infinity, duration: 6, ease: 'easeInOut' }}
-        className="absolute -top-16 -left-16 w-64 h-64 rounded-full blur-3xl pointer-events-none opacity-40"
-        style={{ background: 'radial-gradient(circle, rgba(99, 102, 241, 0.4), transparent)' }} // Indigo orb
-      />
-      <motion.div
-        animate={{ x: [0, -15, 0], y: [0, 20, 0] }}
-        transition={{ repeat: Infinity, duration: 8, ease: 'easeInOut' }}
-        className="absolute -bottom-16 -right-16 w-64 h-64 rounded-full blur-3xl pointer-events-none opacity-30"
-        style={{ background: 'radial-gradient(circle, rgba(168, 85, 247, 0.4), transparent)' }} // Purple orb
-      />
-
-      {/* Main Glass Container */}
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="bg-white/80 backdrop-blur-md border border-white/50 shadow-2xl rounded-3xl overflow-hidden flex flex-col h-[calc(100vh-120px)] relative z-10"
-      >
-
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-indigo-100 flex items-center justify-between bg-white/40">
-          <div className="flex items-center gap-3">
-            <motion.div
-              animate={{ rotate: [0, 5, -5, 0] }}
-              transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }}
-              className="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-200"
-            >
-              <Brain className="w-6 h-6 text-white" />
-            </motion.div>
-            <div>
-              <h2 className="font-semibold text-gray-800 flex items-center gap-1.5 text-lg">
-                AI Companion <Sparkles className="w-4 h-4 text-indigo-500" />
-              </h2>
-              <div className="flex items-center gap-1.5">
-                <span
-                  className={`w-2.5 h-2.5 rounded-full shrink-0 ${intensityDotClass(currentIntensity)}`}
-                  title={intensityLabel(currentIntensity)}
-                />
-                <span className="text-xs text-gray-500 font-medium">
-                  Session tone: {currentIntensity} · {intensityLabel(currentIntensity)}
-                </span>
-              </div>
+    <div className="min-h-screen bg-[#020617] text-slate-100 flex flex-col font-sans selection:bg-indigo-500/30">
+      {/* Header */}
+      <header className="sticky top-0 z-20 bg-[#020617]/80 backdrop-blur-xl border-b border-white/5 py-4 px-6 flex items-center justify-between shadow-2xl">
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-2xl shadow-lg shadow-indigo-500/20">
+              ✨
             </div>
+            <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-[#020617] ${isTyping ? 'bg-emerald-500 animate-pulse' : 'bg-emerald-500'}`}></div>
           </div>
-
-          <div className="flex items-center gap-4">
-            {/* Risk Score Integration */}
-            {session && session.riskScore > 0 && (
-              <div className="text-sm bg-white/50 px-3 py-1 rounded-full border border-gray-200 backdrop-blur-sm">
-                <span className="text-gray-600">Risk: </span>
-                <span className={`font-bold ${session.riskScore >= 50 ? 'text-red-600' :
-                  session.riskScore >= 30 ? 'text-orange-500' :
-                    'text-green-600'
-                  }`}>
-                  {session.riskScore}
-                </span>
-              </div>
-            )}
-
-            {session && (
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={handleCloseSession}
-                className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors text-gray-500"
-                title="Close Session"
-              >
-                <X className="w-4 h-4" />
-              </motion.button>
-            )}
+          <div>
+            <h1 className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+              Aura
+            </h1>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-400">Mental Support AI</span>
+              <span className="w-1 h-1 rounded-full bg-slate-700"></span>
+              <span className={`text-[10px] font-bold uppercase tracking-widest ${riskLevel === 'low' ? 'text-emerald-400' : riskLevel === 'moderate' ? 'text-amber-400' : 'text-rose-400'}`}>
+                Risk: {riskLevel}
+              </span>
+            </div>
           </div>
         </div>
 
-        {showCrisisBanner && (
-          <div className="border-b border-red-200/50 px-4 py-3 bg-red-950/5">
+        <button 
+          onClick={handleCloseSession}
+          className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold transition-all active:scale-95"
+        >
+          End Session
+        </button>
+      </header>
+
+      {/* Main Chat Area */}
+      <main className="flex-1 overflow-y-auto px-4 py-8 sm:px-8 lg:px-32 xl:px-64 scrollbar-hide">
+        {showCrisis && (
+          <div className="mb-8">
             <CrisisInterventionBanner />
           </div>
         )}
 
-        {session?.isFlagged && !showCrisisBanner && (
-          <div className="bg-yellow-50/80 backdrop-blur-md border-b border-yellow-200 text-yellow-800 px-6 py-3 flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 flex-shrink-0 text-yellow-600 mt-0.5" />
-            <div className="text-sm">
-              <p className="font-semibold">Important Notice</p>
-              <p>
-                Your session has been flagged for review. We strongly recommend speaking with a professional counselor.
-              </p>
+        {messages.length === 0 ? (
+          <div className="h-full flex flex-col items-center justify-center text-center opacity-80">
+            <div className="w-20 h-20 rounded-3xl bg-white/5 flex items-center justify-center text-4xl mb-6 border border-white/5">
+              👋
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Welcome Back, {user?.name || 'Friend'}</h2>
+            <p className="max-w-md text-slate-400 leading-relaxed">
+              I'm Aura, your secure and empathetic space to talk. Whether it's stress, academic pressure, or just finding balance, I'm here to listen.
+            </p>
+            <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-lg">
+              {['Feeling overwhelmed with finals', 'How to handle burnout?', 'Just need to vent', 'Can we try a breathing exercise?'].map(txt => (
+                <button 
+                  key={txt}
+                  onClick={() => setInput(txt)}
+                  className="p-4 rounded-2xl bg-white/5 border border-white/5 text-sm text-left hover:bg-white/10 hover:border-indigo-500/30 transition-all"
+                >
+                  "{txt}"
+                </button>
+              ))}
             </div>
           </div>
+        ) : (
+          <div className="space-y-2">
+            {messages.map((msg) => (
+              <ChatMessage key={msg._id} msg={msg} />
+            ))}
+            {isTyping && (
+              <div className="flex justify-start animate-in fade-in duration-300">
+                <div className="bg-white/5 border border-white/5 rounded-2xl rounded-bl-sm px-4 py-3 flex gap-1.5 items-center">
+                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-500/60 animate-bounce"></div>
+                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-500/60 animate-bounce [animation-delay:0.2s]"></div>
+                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-500/60 animate-bounce [animation-delay:0.4s]"></div>
+                </div>
+              </div>
+            )}
+            <div ref={bottomRef} />
+          </div>
         )}
+      </main>
 
-        {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gradient-to-b from-transparent to-white/20">
-          {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center">
-              <motion.div
-                animate={{ y: [0, -10, 0] }}
-                transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
-                className="w-20 h-20 rounded-3xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center mb-5 shadow-lg border border-white"
-              >
-                <span className="text-4xl">🧠</span>
-              </motion.div>
-              <p className="text-gray-800 font-bold text-xl mb-2">How can I help? ✨</p>
-              <p className="text-gray-500 text-sm max-w-sm">
-                I'm your AI companion. Share anything — no judgment, just support 💜
-              </p>
-            </div>
-          ) : (
-            <AnimatePresence initial={false}>
-              {messages.map((msg) => (
-                <motion.div
-                  key={msg._id}
-                  initial={{ opacity: 0, scale: 0.9, y: 12 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  {msg.role === 'assistant' && (
-                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mr-3 mt-1 flex-shrink-0 shadow-md">
-                      <Brain className="w-4 h-4 text-white" />
-                    </div>
-                  )}
-                  <div
-                    className={`max-w-[75%] rounded-2xl px-5 py-3.5 ${msg.role === 'user'
-                      ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20 rounded-br-sm'
-                      : 'bg-white border border-gray-100 text-gray-800 shadow-sm rounded-bl-sm'
-                      }`}
-                  >
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
-                    {msg.role === 'assistant' && msg.suggestedUi === 'breathing_tool' && (
-                      <div className="mt-2 w-full">
-                        <BreathingExercise compact collapsible defaultExpanded={false} />
-                      </div>
-                    )}
-                    {msg.role === 'assistant' && msg.suggestedUi === 'grounding_tool' && (
-                      <div className="mt-2 w-full">
-                        <GroundingExercise compact collapsible defaultExpanded={false} />
-                      </div>
-                    )}
-                    <p className={`text-[10px] mt-2 font-medium ${msg.role === 'user' ? 'text-indigo-100' : 'text-gray-400'
-                      }`}>
-                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                  </div>
-                  {msg.role === 'user' && (
-                    <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center ml-3 mt-1 flex-shrink-0">
-                      <Heart className="w-4 h-4 text-purple-600" />
-                    </div>
-                  )}
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          )}
-
-          {/* Loading Animation */}
-          {loading && (
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex justify-start items-start">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mr-3 flex-shrink-0 shadow-md">
-                <Brain className="w-4 h-4 text-white" />
-              </div>
-              <div className="bg-white border border-gray-100 shadow-sm rounded-2xl rounded-bl-sm px-5 py-4 flex gap-1.5 items-center h-[52px]">
-                <motion.span
-                  animate={{ y: [0, -6, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0 }}
-                  className="w-2 h-2 bg-indigo-400 rounded-full"
-                />
-                <motion.span
-                  animate={{ y: [0, -6, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }}
-                  className="w-2 h-2 bg-indigo-400 rounded-full"
-                />
-                <motion.span
-                  animate={{ y: [0, -6, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }}
-                  className="w-2 h-2 bg-indigo-400 rounded-full"
-                />
-              </div>
-            </motion.div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Input Form */}
-        <div className="p-4 border-t border-white/50 bg-white/40 backdrop-blur-md">
-          <form onSubmit={handleSendMessage} className="flex gap-3">
-            <input
-              type="text"
-              className="flex-1 bg-white/70 backdrop-blur-sm rounded-2xl px-5 py-3.5 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 border border-gray-200 transition-all shadow-sm"
-              placeholder="Share what's on your mind... 💬"
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              disabled={loading}
+      {/* Input Area */}
+      <footer className="p-4 sm:p-6 lg:px-32 xl:px-64 bg-gradient-to-t from-[#020617] to-transparent">
+        <form 
+          onSubmit={handleSend}
+          className="relative max-w-4xl mx-auto"
+        >
+          <div className="relative rounded-[32px] overflow-hidden border border-white/10 bg-[#1e293b]/50 backdrop-blur-2xl shadow-2xl focus-within:border-indigo-500/50 transition-all p-1.5 flex items-end gap-2">
+            <textarea
+              ref={inputRef}
+              rows="1"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              placeholder="Share what's on your mind..."
+              className="flex-1 bg-transparent border-none focus:ring-0 text-slate-100 placeholder:text-slate-500 py-3 pl-4 pr-2 resize-none max-h-48 scrollbar-hide"
             />
-            <motion.button
+            <button
               type="submit"
-              disabled={loading || !inputMessage.trim()}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-2xl w-14 h-auto flex items-center justify-center hover:shadow-lg hover:shadow-indigo-500/30 disabled:opacity-50 transition-all"
+              disabled={!input.trim() || isTyping}
+              className={`w-12 h-12 rounded-[24px] flex items-center justify-center transition-all ${
+                input.trim() && !isTyping 
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 scale-100' 
+                  : 'bg-white/5 text-slate-600 scale-90'
+              }`}
             >
-              <Send className="w-5 h-5 ml-1" />
-            </motion.button>
-          </form>
-          <p className="text-xs text-center text-gray-500 mt-3 font-medium">
-            ⚠️ If you're in crisis, please contact emergency services immediately (988 or 911)
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+              </svg>
+            </button>
+          </div>
+          <p className="mt-3 text-center text-[10px] text-slate-500 font-medium px-4">
+            Aura is an AI companion for emotional support, not a medical professional. If in crisis, please seek immediate help.
           </p>
-        </div>
-
-      </motion.div>
+        </form>
+      </footer>
     </div>
   );
-};
-
-export default Chatbot;
+}

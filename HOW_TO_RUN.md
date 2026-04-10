@@ -40,7 +40,6 @@ Edit `.env`:
 PORT=5000
 NODE_ENV=development
 MONGODB_URI=mongodb://localhost:27017/mental-health-platform
-JWT_SECRET=any-random-string-for-development
 OPENAI_API_KEY=your-openai-api-key-optional
 FRONTEND_URL=http://localhost:5173
 ```
